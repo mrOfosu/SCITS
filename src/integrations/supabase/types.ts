@@ -82,21 +82,39 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          department: string | null
           display_name: string
           email: string | null
+          full_name: string | null
           id: string
+          level: string | null
+          phone_number: string | null
+          profile_completed: boolean
+          student_id: string | null
         }
         Insert: {
           created_at?: string
+          department?: string | null
           display_name: string
           email?: string | null
+          full_name?: string | null
           id: string
+          level?: string | null
+          phone_number?: string | null
+          profile_completed?: boolean
+          student_id?: string | null
         }
         Update: {
           created_at?: string
+          department?: string | null
           display_name?: string
           email?: string | null
+          full_name?: string | null
           id?: string
+          level?: string | null
+          phone_number?: string | null
+          profile_completed?: boolean
+          student_id?: string | null
         }
         Relationships: []
       }

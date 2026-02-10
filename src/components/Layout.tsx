@@ -2,7 +2,7 @@ import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { GraduationCap, LogOut, Home, PlusCircle, Shield } from "lucide-react";
+import { GraduationCap, LogOut, Home, PlusCircle, Shield, User } from "lucide-react";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
@@ -15,6 +15,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     : [
         { to: "/", label: "My Complaints", icon: Home },
         { to: "/submit", label: "New Complaint", icon: PlusCircle },
+        { to: "/profile", label: "Profile", icon: User },
       ];
 
   return (

@@ -18,7 +18,7 @@ interface ComplaintWithProfile {
   updated_at: string;
   user_id: string;
   description: string;
-  profiles: { display_name: string } | null;
+  profiles: { display_name: string; full_name: string | null; student_id: string | null } | null;
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -44,7 +44,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     supabase
       .from("complaints")
-      .select("*, profiles:user_id(display_name)")
+      .select("*, profiles:user_id(display_name, full_name, student_id)")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
         setComplaints((data as unknown as ComplaintWithProfile[]) || []);
@@ -139,6 +139,7 @@ export default function AdminDashboard() {
             <TableRow>
               <TableHead>Subject</TableHead>
               <TableHead>Student</TableHead>
+              <TableHead>Student ID</TableHead>
               <TableHead>Category</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
@@ -148,7 +149,7 @@ export default function AdminDashboard() {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                   No complaints found.
                 </TableCell>
               </TableRow>
@@ -156,7 +157,8 @@ export default function AdminDashboard() {
               filtered.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell className="font-medium">{c.subject}</TableCell>
-                  <TableCell>{c.profiles?.display_name || "Unknown"}</TableCell>
+                  <TableCell>{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</TableCell>
+                  <TableCell className="text-muted-foreground">{c.profiles?.student_id || "—"}</TableCell>
                   <TableCell>{categoryLabels[c.category] || c.category}</TableCell>
                   <TableCell>
                     <Badge variant={statusConfig[c.status]?.variant || "outline"}>
