@@ -1,0 +1,2 @@
+ALTER TABLE public.complaints DROP CONSTRAINT complaints_user_id_fkey;
+ALTER TABLE public.complaints ADD CONSTRAINT complaints_user_id_profiles_fkey FOREIGN KEY (user_id) REFERENCES public.profiles(id);
