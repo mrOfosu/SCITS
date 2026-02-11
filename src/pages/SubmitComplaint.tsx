@@ -9,28 +9,82 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { Paperclip, X } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
 type Category = Database["public"]["Enums"]["complaint_category"];
+type Priority = Database["public"]["Enums"]["complaint_priority"];
+
+const subCategories: Record<string, string[]> = {
+  academic: ["Grading", "Course Content", "Faculty", "Examination", "Timetable"],
+  infrastructure: ["Hostel", "Classroom", "Laboratory", "Library", "Sports Facility"],
+  administrative: ["Registration", "Fees", "Documentation", "ID Card", "Scholarship"],
+  other: ["General", "Suggestion", "Feedback"],
+};
 
 export default function SubmitComplaint() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [category, setCategory] = useState<Category | "">("");
+  const [subCategory, setSubCategory] = useState("");
+  const [priority, setPriority] = useState<Priority | "">("");
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const descriptionError = description.length > 0 && description.length < 20;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    const allowed = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(selected.type)) {
+      toast({ title: "Invalid file", description: "Only PDF, JPEG, PNG, and WebP files are allowed.", variant: "destructive" });
+      return;
+    }
+    if (selected.size > 5 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Maximum file size is 5MB.", variant: "destructive" });
+      return;
+    }
+    setFile(selected);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !category) return;
+    if (!user || !category || !priority) return;
+    if (description.length < 20) {
+      toast({ title: "Description too short", description: "Please provide at least 20 characters.", variant: "destructive" });
+      return;
+    }
     setLoading(true);
+
+    let attachment_url: string | null = null;
+
+    // Upload file if provided
+    if (file) {
+      const ext = file.name.split(".").pop();
+      const path = `${user.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from("complaint-attachments")
+        .upload(path, file);
+      if (uploadError) {
+        toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from("complaint-attachments").getPublicUrl(path);
+      attachment_url = urlData.publicUrl;
+    }
 
     const { error } = await supabase.from("complaints").insert({
       user_id: user.id,
       category: category as Category,
+      priority: priority as Priority,
+      sub_category: subCategory || null,
       subject,
       description,
+      attachment_url,
     });
 
     if (error) {
@@ -51,27 +105,83 @@ export default function SubmitComplaint() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Category</Label>
-              <Select value={category} onValueChange={(v) => setCategory(v as Category)}>
-                <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="academic">Academic</SelectItem>
-                  <SelectItem value="infrastructure">Infrastructure</SelectItem>
-                  <SelectItem value="administrative">Administrative</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Category *</Label>
+                <Select value={category} onValueChange={(v) => { setCategory(v as Category); setSubCategory(""); }}>
+                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="academic">Academic</SelectItem>
+                    <SelectItem value="infrastructure">Infrastructure</SelectItem>
+                    <SelectItem value="administrative">Administrative</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Priority *</Label>
+                <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
+                  <SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+
+            {category && subCategories[category] && (
+              <div className="space-y-2">
+                <Label>Sub-category</Label>
+                <Select value={subCategory} onValueChange={setSubCategory}>
+                  <SelectTrigger><SelectValue placeholder="Select sub-category (optional)" /></SelectTrigger>
+                  <SelectContent>
+                    {subCategories[category].map((sc) => (
+                      <SelectItem key={sc} value={sc.toLowerCase()}>{sc}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="space-y-2">
-              <Label htmlFor="subject">Subject</Label>
+              <Label htmlFor="subject">Subject *</Label>
               <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Brief summary of your issue" required />
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Provide details about your complaint..." rows={5} required />
+              <Label htmlFor="description">Description * <span className="text-xs text-muted-foreground">(min 20 characters)</span></Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Provide details about your complaint..."
+                rows={5}
+                required
+                className={descriptionError ? "border-destructive" : ""}
+              />
+              {descriptionError && (
+                <p className="text-xs text-destructive">Description must be at least 20 characters ({description.length}/20)</p>
+              )}
             </div>
-            <Button type="submit" className="w-full" disabled={loading || !category}>
+
+            <div className="space-y-2">
+              <Label>Attachment <span className="text-xs text-muted-foreground">(PDF or image, max 5MB)</span></Label>
+              {file ? (
+                <div className="flex items-center gap-2 rounded-md border p-2 text-sm">
+                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                  <span className="flex-1 truncate">{file.name}</span>
+                  <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFile(null)}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <Input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={handleFileChange} />
+              )}
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading || !category || !priority || description.length < 20}>
               {loading ? "Submitting..." : "Submit Complaint"}
             </Button>
           </CardContent>

@@ -48,31 +48,43 @@ export type Database = {
       }
       complaints: {
         Row: {
+          attachment_url: string | null
           category: Database["public"]["Enums"]["complaint_category"]
           created_at: string
           description: string
           id: string
+          priority: Database["public"]["Enums"]["complaint_priority"]
+          reference_id: string | null
           status: Database["public"]["Enums"]["complaint_status"]
+          sub_category: string | null
           subject: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          attachment_url?: string | null
           category: Database["public"]["Enums"]["complaint_category"]
           created_at?: string
           description: string
           id?: string
+          priority?: Database["public"]["Enums"]["complaint_priority"]
+          reference_id?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
+          sub_category?: string | null
           subject: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          attachment_url?: string | null
           category?: Database["public"]["Enums"]["complaint_category"]
           created_at?: string
           description?: string
           id?: string
+          priority?: Database["public"]["Enums"]["complaint_priority"]
+          reference_id?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
+          sub_category?: string | null
           subject?: string
           updated_at?: string
           user_id?: string
@@ -164,6 +176,7 @@ export type Database = {
         | "infrastructure"
         | "administrative"
         | "other"
+      complaint_priority: "low" | "medium" | "high"
       complaint_status: "pending" | "in_review" | "resolved"
     }
     CompositeTypes: {
@@ -299,6 +312,7 @@ export const Constants = {
         "administrative",
         "other",
       ],
+      complaint_priority: ["low", "medium", "high"],
       complaint_status: ["pending", "in_review", "resolved"],
     },
   },

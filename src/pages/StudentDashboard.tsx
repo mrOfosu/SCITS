@@ -4,14 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Clock, CheckCircle2, Eye } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { PlusCircle, Eye, Paperclip } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Pending", variant: "destructive" },
   in_review: { label: "In Review", variant: "default" },
   resolved: { label: "Resolved", variant: "secondary" },
+};
+
+const priorityConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  low: { label: "Low", variant: "secondary" },
+  medium: { label: "Medium", variant: "outline" },
+  high: { label: "High", variant: "destructive" },
 };
 
 const categoryLabels: Record<string, string> = {
@@ -71,14 +77,22 @@ export default function StudentDashboard() {
               <Card className="transition-colors hover:bg-muted/50">
                 <CardContent className="flex items-center justify-between p-4">
                   <div className="space-y-1">
-                    <p className="font-medium">{c.subject}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">{c.subject}</p>
+                      {c.attachment_url && <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />}
+                    </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span className="font-mono text-xs">{c.reference_id}</span>
+                      <span>·</span>
                       <span>{categoryLabels[c.category]}</span>
                       <span>·</span>
                       <span>{new Date(c.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    <Badge variant={priorityConfig[c.priority]?.variant || "outline"}>
+                      {priorityConfig[c.priority]?.label || c.priority}
+                    </Badge>
                     <Badge variant={statusConfig[c.status].variant}>
                       {statusConfig[c.status].label}
                     </Badge>

@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
+import { Paperclip, ExternalLink } from "lucide-react";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type ComplaintStatus = Database["public"]["Enums"]["complaint_status"];
@@ -24,6 +25,12 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   pending: { label: "Pending", variant: "destructive" },
   in_review: { label: "In Review", variant: "default" },
   resolved: { label: "Resolved", variant: "secondary" },
+};
+
+const priorityConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  low: { label: "Low", variant: "secondary" },
+  medium: { label: "Medium", variant: "outline" },
+  high: { label: "High", variant: "destructive" },
 };
 
 const categoryLabels: Record<string, string> = {
@@ -64,7 +71,6 @@ export default function ComplaintDetail() {
     if (!user || !id || !newMessage.trim()) return;
     setSending(true);
 
-    // Update status if admin changed it
     if (isAdmin && newStatus && newStatus !== complaint?.status) {
       await supabase.from("complaints").update({ status: newStatus as ComplaintStatus }).eq("id", id);
     }
@@ -108,17 +114,46 @@ export default function ComplaintDetail() {
           <div className="flex items-start justify-between">
             <div>
               <CardTitle>{complaint.subject}</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {categoryLabels[complaint.category]} · {new Date(complaint.created_at).toLocaleDateString()}
-              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                {complaint.reference_id && (
+                  <span className="font-mono text-xs font-medium text-foreground">{complaint.reference_id}</span>
+                )}
+                <span>·</span>
+                <span>{categoryLabels[complaint.category]}</span>
+                {complaint.sub_category && (
+                  <>
+                    <span>›</span>
+                    <span className="capitalize">{complaint.sub_category}</span>
+                  </>
+                )}
+                <span>·</span>
+                <span>{new Date(complaint.created_at).toLocaleDateString()}</span>
+              </div>
             </div>
-            <Badge variant={statusConfig[complaint.status].variant}>
-              {statusConfig[complaint.status].label}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant={priorityConfig[complaint.priority]?.variant || "outline"}>
+                {priorityConfig[complaint.priority]?.label || complaint.priority}
+              </Badge>
+              <Badge variant={statusConfig[complaint.status].variant}>
+                {statusConfig[complaint.status].label}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <p className="whitespace-pre-wrap text-sm">{complaint.description}</p>
+          {complaint.attachment_url && (
+            <a
+              href={complaint.attachment_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-primary hover:bg-muted transition-colors"
+            >
+              <Paperclip className="h-4 w-4" />
+              View Attachment
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
         </CardContent>
       </Card>
 
