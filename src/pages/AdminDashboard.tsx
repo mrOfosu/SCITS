@@ -3,17 +3,21 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, CheckCircle2, Eye, Search, AlertCircle } from "lucide-react";
+import { Clock, CheckCircle2, Eye, Search, AlertCircle, Paperclip } from "lucide-react";
 
 interface ComplaintWithProfile {
   id: string;
   subject: string;
   category: string;
   status: string;
+  priority: string;
+  reference_id: string | null;
+  sub_category: string | null;
+  attachment_url: string | null;
   created_at: string;
   updated_at: string;
   user_id: string;
@@ -25,6 +29,12 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   pending: { label: "Pending", variant: "destructive" },
   in_review: { label: "In Review", variant: "default" },
   resolved: { label: "Resolved", variant: "secondary" },
+};
+
+const priorityConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  low: { label: "Low", variant: "secondary" },
+  medium: { label: "Medium", variant: "outline" },
+  high: { label: "High", variant: "destructive" },
 };
 
 const categoryLabels: Record<string, string> = {
@@ -39,6 +49,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -55,7 +66,8 @@ export default function AdminDashboard() {
   const filtered = complaints.filter((c) => {
     if (statusFilter !== "all" && c.status !== statusFilter) return false;
     if (categoryFilter !== "all" && c.category !== categoryFilter) return false;
-    if (search && !c.subject.toLowerCase().includes(search.toLowerCase())) return false;
+    if (priorityFilter !== "all" && c.priority !== priorityFilter) return false;
+    if (search && !c.subject.toLowerCase().includes(search.toLowerCase()) && !c.reference_id?.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
@@ -109,7 +121,7 @@ export default function AdminDashboard() {
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Search by subject..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <Input className="pl-9" placeholder="Search by subject or reference..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
@@ -130,6 +142,15 @@ export default function AdminDashboard() {
             <SelectItem value="other">Other</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+          <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Priority</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Table */}
@@ -137,10 +158,11 @@ export default function AdminDashboard() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>Ref</TableHead>
               <TableHead>Subject</TableHead>
               <TableHead>Student</TableHead>
-              <TableHead>Student ID</TableHead>
               <TableHead>Category</TableHead>
+              <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Date</TableHead>
               <TableHead></TableHead>
@@ -149,17 +171,32 @@ export default function AdminDashboard() {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                   No complaints found.
                 </TableCell>
               </TableRow>
             ) : (
               filtered.map((c) => (
                 <TableRow key={c.id}>
-                  <TableCell className="font-medium">{c.subject}</TableCell>
-                  <TableCell>{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.profiles?.student_id || "—"}</TableCell>
+                  <TableCell className="font-mono text-xs">{c.reference_id || "—"}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-1.5">
+                      {c.subject}
+                      {c.attachment_url && <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div>
+                      <p className="text-sm">{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</p>
+                      <p className="text-xs text-muted-foreground">{c.profiles?.student_id || "—"}</p>
+                    </div>
+                  </TableCell>
                   <TableCell>{categoryLabels[c.category] || c.category}</TableCell>
+                  <TableCell>
+                    <Badge variant={priorityConfig[c.priority]?.variant || "outline"}>
+                      {priorityConfig[c.priority]?.label || c.priority}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={statusConfig[c.status]?.variant || "outline"}>
                       {statusConfig[c.status]?.label || c.status}
