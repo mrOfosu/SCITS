@@ -73,8 +73,8 @@ export default function SubmitComplaint() {
         setLoading(false);
         return;
       }
-      const { data: urlData } = supabase.storage.from("complaint-attachments").getPublicUrl(path);
-      attachment_url = urlData.publicUrl;
+      // Store the path, not the public URL — we'll generate signed URLs at view time
+      attachment_url = path;
     }
 
     const { error } = await supabase.from("complaints").insert({

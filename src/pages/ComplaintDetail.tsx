@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Paperclip, ExternalLink } from "lucide-react";
+import AttachmentPreview from "@/components/AttachmentPreview";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type ComplaintStatus = Database["public"]["Enums"]["complaint_status"];
@@ -143,16 +144,7 @@ export default function ComplaintDetail() {
         <CardContent className="space-y-4">
           <p className="whitespace-pre-wrap text-sm">{complaint.description}</p>
           {complaint.attachment_url && (
-            <a
-              href={complaint.attachment_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-primary hover:bg-muted transition-colors"
-            >
-              <Paperclip className="h-4 w-4" />
-              View Attachment
-              <ExternalLink className="h-3 w-3" />
-            </a>
+            <AttachmentPreview attachmentUrl={complaint.attachment_url} />
           )}
         </CardContent>
       </Card>
