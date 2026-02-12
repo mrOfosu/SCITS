@@ -59,10 +59,22 @@ export default function ComplaintDetail() {
 
     const { data: resp } = await supabase
       .from("complaint_responses")
-      .select("id, message, created_at, responder_id, profiles:responder_id(display_name)")
+      .select("id, message, created_at, responder_id")
       .eq("complaint_id", id)
       .order("created_at", { ascending: true });
-    setResponses((resp as unknown as ResponseWithProfile[]) || []);
+
+    // Fetch responder names separately since there's no FK
+    const enriched: ResponseWithProfile[] = [];
+    for (const r of resp || []) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", r.responder_id)
+        .maybeSingle();
+      enriched.push({ ...r, profiles: profile });
+    }
+    setResponses(enriched);
+    setLoading(false);
     setLoading(false);
   };
 

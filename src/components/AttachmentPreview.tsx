@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Paperclip, Download, ExternalLink } from "lucide-react";
+import { Paperclip, Download } from "lucide-react";
 
 interface AttachmentPreviewProps {
   attachmentUrl: string;
@@ -18,6 +18,7 @@ export default function AttachmentPreview({ attachmentUrl }: AttachmentPreviewPr
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState(false);
 
   const isPath = !attachmentUrl.startsWith("http");
 
@@ -77,18 +78,35 @@ export default function AttachmentPreview({ attachmentUrl }: AttachmentPreviewPr
         />
       )}
 
-      <a
-        href={signedUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        download
+      <Button
+        variant="outline"
+        size="sm"
+        className="gap-1.5"
+        disabled={downloading}
+        onClick={async () => {
+          try {
+            setDownloading(true);
+            const res = await fetch(signedUrl);
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            const ext = attachmentUrl.split(".").pop() || "file";
+            a.download = `attachment.${ext}`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          } catch {
+            setError(true);
+          } finally {
+            setDownloading(false);
+          }
+        }}
       >
-        <Button variant="outline" size="sm" className="gap-1.5">
-          <Download className="h-4 w-4" />
-          Download Attachment
-          <ExternalLink className="h-3 w-3" />
-        </Button>
-      </a>
+        <Download className="h-4 w-4" />
+        {downloading ? "Downloading..." : "Download Attachment"}
+      </Button>
     </div>
   );
 }
