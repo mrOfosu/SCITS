@@ -6,9 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Paperclip, ExternalLink } from "lucide-react";
+import { ArrowRight, History } from "lucide-react";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
@@ -22,10 +21,19 @@ interface ResponseWithProfile {
   profiles: { display_name: string } | null;
 }
 
+interface ActivityEntry {
+  id: string;
+  old_status: string;
+  new_status: string;
+  created_at: string;
+  changed_by: string;
+}
+
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Pending", variant: "destructive" },
   in_review: { label: "In Review", variant: "default" },
   resolved: { label: "Resolved", variant: "secondary" },
+  closed: { label: "Closed", variant: "outline" },
 };
 
 const priorityConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -41,21 +49,34 @@ const categoryLabels: Record<string, string> = {
   other: "Other",
 };
 
+const nextStatusMap: Record<string, ComplaintStatus | null> = {
+  pending: "in_review",
+  in_review: "resolved",
+  resolved: "closed",
+  closed: null,
+};
+
+const transitionLabels: Record<string, string> = {
+  in_review: "Mark as In Review",
+  resolved: "Mark as Resolved",
+  closed: "Close Complaint",
+};
+
 export default function ComplaintDetail() {
   const { id } = useParams<{ id: string }>();
   const { user, isAdmin } = useAuth();
   const [complaint, setComplaint] = useState<Tables<"complaints"> | null>(null);
   const [responses, setResponses] = useState<ResponseWithProfile[]>([]);
+  const [activity, setActivity] = useState<ActivityEntry[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [newStatus, setNewStatus] = useState<ComplaintStatus | "">("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
 
   const fetchData = async () => {
     if (!id) return;
     const { data: comp } = await supabase.from("complaints").select("*").eq("id", id).maybeSingle();
     setComplaint(comp);
-    setNewStatus(comp?.status || "");
 
     const { data: resp } = await supabase
       .from("complaint_responses")
@@ -63,7 +84,6 @@ export default function ComplaintDetail() {
       .eq("complaint_id", id)
       .order("created_at", { ascending: true });
 
-    // Fetch responder names separately since there's no FK
     const enriched: ResponseWithProfile[] = [];
     for (const r of resp || []) {
       const { data: profile } = await supabase
@@ -74,44 +94,50 @@ export default function ComplaintDetail() {
       enriched.push({ ...r, profiles: profile });
     }
     setResponses(enriched);
-    setLoading(false);
+
+    const { data: act } = await supabase
+      .from("complaint_activity")
+      .select("*")
+      .eq("complaint_id", id)
+      .order("created_at", { ascending: true });
+    setActivity((act as ActivityEntry[]) || []);
+
     setLoading(false);
   };
 
   useEffect(() => { fetchData(); }, [id]);
 
+  const nextStatus = complaint ? nextStatusMap[complaint.status] : null;
+
+  const handleTransition = async () => {
+    if (!isAdmin || !id || !nextStatus) return;
+    setTransitioning(true);
+    const { error } = await supabase
+      .from("complaints")
+      .update({ status: nextStatus })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Invalid transition", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Status updated", description: `Moved to ${statusConfig[nextStatus]?.label}` });
+      fetchData();
+    }
+    setTransitioning(false);
+  };
+
   const handleSendResponse = async () => {
     if (!user || !id || !newMessage.trim()) return;
     setSending(true);
-
-    if (isAdmin && newStatus && newStatus !== complaint?.status) {
-      await supabase.from("complaints").update({ status: newStatus as ComplaintStatus }).eq("id", id);
-    }
-
     const { error } = await supabase.from("complaint_responses").insert({
       complaint_id: id,
       responder_id: user.id,
       message: newMessage,
     });
-
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Response sent" });
       setNewMessage("");
-      fetchData();
-    }
-    setSending(false);
-  };
-
-  const handleStatusUpdate = async () => {
-    if (!isAdmin || !id || !newStatus) return;
-    setSending(true);
-    const { error } = await supabase.from("complaints").update({ status: newStatus as ComplaintStatus }).eq("id", id);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Status updated" });
       fetchData();
     }
     setSending(false);
@@ -147,8 +173,8 @@ export default function ComplaintDetail() {
               <Badge variant={priorityConfig[complaint.priority]?.variant || "outline"}>
                 {priorityConfig[complaint.priority]?.label || complaint.priority}
               </Badge>
-              <Badge variant={statusConfig[complaint.status].variant}>
-                {statusConfig[complaint.status].label}
+              <Badge variant={statusConfig[complaint.status]?.variant || "outline"}>
+                {statusConfig[complaint.status]?.label || complaint.status}
               </Badge>
             </div>
           </div>
@@ -161,24 +187,52 @@ export default function ComplaintDetail() {
         </CardContent>
       </Card>
 
-      {/* Admin status controls */}
-      {isAdmin && (
+      {/* Admin status workflow */}
+      {isAdmin && nextStatus && (
         <Card>
-          <CardContent className="flex items-center gap-3 p-4">
-            <span className="text-sm font-medium">Update Status:</span>
-            <Select value={newStatus} onValueChange={(v) => setNewStatus(v as ComplaintStatus)}>
-              <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="in_review">In Review</SelectItem>
-                <SelectItem value="resolved">Resolved</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button size="sm" onClick={handleStatusUpdate} disabled={sending || newStatus === complaint.status}>
-              Save
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-2 text-sm">
+              <Badge variant={statusConfig[complaint.status]?.variant || "outline"}>
+                {statusConfig[complaint.status]?.label}
+              </Badge>
+              <ArrowRight className="h-4 w-4 text-muted-foreground" />
+              <Badge variant={statusConfig[nextStatus]?.variant || "outline"}>
+                {statusConfig[nextStatus]?.label}
+              </Badge>
+            </div>
+            <Button size="sm" onClick={handleTransition} disabled={transitioning}>
+              {transitioning ? "Updating..." : transitionLabels[nextStatus] || "Advance"}
             </Button>
           </CardContent>
         </Card>
+      )}
+
+      {isAdmin && !nextStatus && complaint.status === "closed" && (
+        <Card>
+          <CardContent className="p-4 text-center text-sm text-muted-foreground">
+            This complaint is closed. No further status changes are available.
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Activity log */}
+      {activity.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="flex items-center gap-1.5 font-semibold">
+            <History className="h-4 w-4" /> Status History
+          </h3>
+          <div className="space-y-1">
+            {activity.map((a) => (
+              <div key={a.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{new Date(a.created_at).toLocaleString()}</span>
+                <span>—</span>
+                <Badge variant="outline" className="text-xs">{statusConfig[a.old_status]?.label || a.old_status}</Badge>
+                <ArrowRight className="h-3 w-3" />
+                <Badge variant="outline" className="text-xs">{statusConfig[a.new_status]?.label || a.new_status}</Badge>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* Responses */}

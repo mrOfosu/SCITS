@@ -29,6 +29,7 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   pending: { label: "Pending", variant: "destructive" },
   in_review: { label: "In Review", variant: "default" },
   resolved: { label: "Resolved", variant: "secondary" },
+  closed: { label: "Closed", variant: "outline" },
 };
 
 const priorityConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -75,6 +76,7 @@ export default function AdminDashboard() {
     pending: complaints.filter((c) => c.status === "pending").length,
     in_review: complaints.filter((c) => c.status === "in_review").length,
     resolved: complaints.filter((c) => c.status === "resolved").length,
+    closed: complaints.filter((c) => c.status === "closed").length,
   };
 
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
@@ -87,7 +89,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
             <AlertCircle className="h-8 w-8 text-destructive" />
@@ -115,6 +117,15 @@ export default function AdminDashboard() {
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardContent className="flex items-center gap-3 p-4">
+            <CheckCircle2 className="h-8 w-8 text-muted-foreground/50" />
+            <div>
+              <p className="text-2xl font-bold">{counts.closed}</p>
+              <p className="text-sm text-muted-foreground">Closed</p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters */}
@@ -130,6 +141,7 @@ export default function AdminDashboard() {
             <SelectItem value="pending">Pending</SelectItem>
             <SelectItem value="in_review">In Review</SelectItem>
             <SelectItem value="resolved">Resolved</SelectItem>
+            <SelectItem value="closed">Closed</SelectItem>
           </SelectContent>
         </Select>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
