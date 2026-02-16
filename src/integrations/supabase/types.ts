@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      complaint_activity: {
+        Row: {
+          changed_by: string
+          complaint_id: string
+          created_at: string
+          id: string
+          new_status: string
+          old_status: string
+        }
+        Insert: {
+          changed_by: string
+          complaint_id: string
+          created_at?: string
+          id?: string
+          new_status: string
+          old_status: string
+        }
+        Update: {
+          changed_by?: string
+          complaint_id?: string
+          created_at?: string
+          id?: string
+          new_status?: string
+          old_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaint_activity_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       complaint_responses: {
         Row: {
           complaint_id: string
@@ -177,7 +212,7 @@ export type Database = {
         | "administrative"
         | "other"
       complaint_priority: "low" | "medium" | "high"
-      complaint_status: "pending" | "in_review" | "resolved"
+      complaint_status: "pending" | "in_review" | "resolved" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -313,7 +348,7 @@ export const Constants = {
         "other",
       ],
       complaint_priority: ["low", "medium", "high"],
-      complaint_status: ["pending", "in_review", "resolved"],
+      complaint_status: ["pending", "in_review", "resolved", "closed"],
     },
   },
 } as const
