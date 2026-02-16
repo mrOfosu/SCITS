@@ -15,22 +15,56 @@ export interface Profile {
 }
 
 export function useProfile() {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async () => {
-    if (!user) { setLoading(false); return; }
+  useEffect(() => {
+    // Wait for auth to finish before doing anything
+    if (authLoading) return;
+
+    if (!user) {
+      setProfile(null);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+
+    const fetchProfile = async () => {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (!cancelled) {
+          setProfile(data as unknown as Profile | null);
+        }
+      } catch {
+        // ignore
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProfile();
+
+    return () => { cancelled = true; };
+  }, [user, authLoading]);
+
+  const refetch = async () => {
+    if (!user) return;
     const { data } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
       .maybeSingle();
     setProfile(data as unknown as Profile | null);
-    setLoading(false);
   };
 
-  useEffect(() => { fetchProfile(); }, [user]);
-
-  return { profile, loading, refetch: fetchProfile };
+  return { profile, loading, refetch };
 }
