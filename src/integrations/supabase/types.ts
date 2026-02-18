@@ -16,28 +16,40 @@ export type Database = {
     Tables: {
       complaint_activity: {
         Row: {
-          changed_by: string
+          action_type: string
           complaint_id: string
           created_at: string
           id: string
           new_status: string
+          new_value: Json | null
           old_status: string
+          old_value: Json | null
+          performed_by: string
+          performed_role: string
         }
         Insert: {
-          changed_by: string
+          action_type?: string
           complaint_id: string
           created_at?: string
           id?: string
           new_status: string
+          new_value?: Json | null
           old_status: string
+          old_value?: Json | null
+          performed_by: string
+          performed_role?: string
         }
         Update: {
-          changed_by?: string
+          action_type?: string
           complaint_id?: string
           created_at?: string
           id?: string
           new_status?: string
+          new_value?: Json | null
           old_status?: string
+          old_value?: Json | null
+          performed_by?: string
+          performed_role?: string
         }
         Relationships: [
           {

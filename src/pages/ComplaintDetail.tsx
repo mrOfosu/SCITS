@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { ArrowRight, History } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import AttachmentPreview from "@/components/AttachmentPreview";
+import ActivityLog from "@/components/ActivityLog";
+import type { ActivityEntry } from "@/components/ActivityLog";
 import type { Tables, Database } from "@/integrations/supabase/types";
 
 type ComplaintStatus = Database["public"]["Enums"]["complaint_status"];
@@ -19,14 +21,6 @@ interface ResponseWithProfile {
   created_at: string;
   responder_id: string;
   profiles: { display_name: string } | null;
-}
-
-interface ActivityEntry {
-  id: string;
-  old_status: string;
-  new_status: string;
-  created_at: string;
-  changed_by: string;
 }
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -100,7 +94,28 @@ export default function ComplaintDetail() {
       .select("*")
       .eq("complaint_id", id)
       .order("created_at", { ascending: true });
-    setActivity((act as ActivityEntry[]) || []);
+
+    const enrichedAct: ActivityEntry[] = [];
+    for (const a of act || []) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", a.performed_by)
+        .maybeSingle();
+      enrichedAct.push({
+        id: a.id,
+        action_type: a.action_type,
+        performed_by: a.performed_by,
+        performed_role: a.performed_role,
+        old_status: a.old_status,
+        new_status: a.new_status,
+        old_value: a.old_value as Record<string, unknown> | null,
+        new_value: a.new_value as Record<string, unknown> | null,
+        created_at: a.created_at,
+        profiles: profile,
+      });
+    }
+    setActivity(enrichedAct);
 
     setLoading(false);
   };
@@ -216,24 +231,7 @@ export default function ComplaintDetail() {
       )}
 
       {/* Activity log */}
-      {activity.length > 0 && (
-        <div className="space-y-2">
-          <h3 className="flex items-center gap-1.5 font-semibold">
-            <History className="h-4 w-4" /> Status History
-          </h3>
-          <div className="space-y-1">
-            {activity.map((a) => (
-              <div key={a.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>{new Date(a.created_at).toLocaleString()}</span>
-                <span>—</span>
-                <Badge variant="outline" className="text-xs">{statusConfig[a.old_status]?.label || a.old_status}</Badge>
-                <ArrowRight className="h-3 w-3" />
-                <Badge variant="outline" className="text-xs">{statusConfig[a.new_status]?.label || a.new_status}</Badge>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <ActivityLog activity={activity} />
 
       {/* Responses */}
       <div className="space-y-3">
