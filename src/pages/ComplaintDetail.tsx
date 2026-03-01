@@ -125,8 +125,9 @@ export default function ComplaintDetail() {
   const nextStatus = complaint ? nextStatusMap[complaint.status] : null;
 
   const handleTransition = async () => {
-    if (!isAdmin || !id || !nextStatus) return;
+    if (!isAdmin || !id || !nextStatus || !complaint) return;
     setTransitioning(true);
+    const oldStatus = complaint.status;
     const { error } = await supabase
       .from("complaints")
       .update({ status: nextStatus })
@@ -135,6 +136,12 @@ export default function ComplaintDetail() {
       toast({ title: "Invalid transition", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Status updated", description: `Moved to ${statusConfig[nextStatus]?.label}` });
+      // Send status change notification (fire-and-forget)
+      supabase.functions.invoke("notify-status-change", {
+        body: { complaint_id: id, old_status: oldStatus, new_status: nextStatus },
+      }).then(({ error: notifErr }) => {
+        if (notifErr) console.error("Status notification failed:", notifErr);
+      });
       fetchData();
     }
     setTransitioning(false);

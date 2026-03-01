@@ -150,28 +150,34 @@ export type Database = {
         Row: {
           complaint_id: string
           created_at: string
+          dedupe_key: string | null
           error_message: string | null
           id: string
+          notification_type: string
           recipient_email: string
-          response_id: string
+          response_id: string | null
           status: string
         }
         Insert: {
           complaint_id: string
           created_at?: string
+          dedupe_key?: string | null
           error_message?: string | null
           id?: string
+          notification_type?: string
           recipient_email: string
-          response_id: string
+          response_id?: string | null
           status?: string
         }
         Update: {
           complaint_id?: string
           created_at?: string
+          dedupe_key?: string | null
           error_message?: string | null
           id?: string
+          notification_type?: string
           recipient_email?: string
-          response_id?: string
+          response_id?: string | null
           status?: string
         }
         Relationships: [
@@ -185,7 +191,7 @@ export type Database = {
           {
             foreignKeyName: "notification_log_response_id_fkey"
             columns: ["response_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "complaint_responses"
             referencedColumns: ["id"]
           },
