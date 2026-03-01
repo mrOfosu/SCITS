@@ -146,6 +146,51 @@ export type Database = {
           },
         ]
       }
+      notification_log: {
+        Row: {
+          complaint_id: string
+          created_at: string
+          error_message: string | null
+          id: string
+          recipient_email: string
+          response_id: string
+          status: string
+        }
+        Insert: {
+          complaint_id: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          response_id: string
+          status?: string
+        }
+        Update: {
+          complaint_id?: string
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          response_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_log_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_log_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: true
+            referencedRelation: "complaint_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
