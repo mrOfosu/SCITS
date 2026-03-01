@@ -143,16 +143,24 @@ export default function ComplaintDetail() {
   const handleSendResponse = async () => {
     if (!user || !id || !newMessage.trim()) return;
     setSending(true);
-    const { error } = await supabase.from("complaint_responses").insert({
+    const { data: inserted, error } = await supabase.from("complaint_responses").insert({
       complaint_id: id,
       responder_id: user.id,
       message: newMessage,
-    });
+    }).select("id").single();
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Response sent" });
       setNewMessage("");
+      // Send email notification (fire-and-forget, don't block UI)
+      if (isAdmin && inserted?.id) {
+        supabase.functions.invoke("notify-complaint-response", {
+          body: { complaint_id: id, response_id: inserted.id },
+        }).then(({ error: notifErr }) => {
+          if (notifErr) console.error("Notification failed:", notifErr);
+        });
+      }
       fetchData();
     }
     setSending(false);
