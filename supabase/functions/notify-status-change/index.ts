@@ -22,15 +22,28 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { complaint_id, response_id } = await req.json();
-    if (!complaint_id || !response_id)
-      throw new Error("complaint_id and response_id are required");
+    const { complaint_id, old_status, new_status } = await req.json();
+    if (!complaint_id || !old_status || !new_status)
+      throw new Error("complaint_id, old_status, and new_status are required");
 
-    // Check for duplicate
+    if (old_status === new_status) {
+      return new Response(
+        JSON.stringify({ success: true, message: "No status change" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Dedupe key: use complaint_id + new_status combo
+    const dedupeKey = `status_${complaint_id}_${old_status}_${new_status}`;
+
+    // Check for recent duplicate (within last 60 seconds)
     const { data: existing } = await supabase
       .from("notification_log")
       .select("id")
-      .eq("response_id", response_id)
+      .eq("complaint_id", complaint_id)
+      .eq("notification_type", "status_change")
+      .eq("dedupe_key", dedupeKey)
+      .gte("created_at", new Date(Date.now() - 60000).toISOString())
       .maybeSingle();
 
     if (existing) {
@@ -43,7 +56,7 @@ Deno.serve(async (req) => {
     // Fetch complaint
     const { data: complaint, error: compErr } = await supabase
       .from("complaints")
-      .select("user_id, reference_id, subject, status")
+      .select("user_id, reference_id, subject, priority")
       .eq("id", complaint_id)
       .single();
 
@@ -58,43 +71,29 @@ Deno.serve(async (req) => {
 
     if (!profile?.email) throw new Error("Owner email not found");
 
-    // Fetch response message
-    const { data: response } = await supabase
-      .from("complaint_responses")
-      .select("message")
-      .eq("id", response_id)
-      .single();
-
-    if (!response) throw new Error("Response not found");
-
-    // Insert log first (prevents duplicates via unique constraint)
-    const dedupeKey = `response_${response_id}`;
-    const { error: logErr } = await supabase.from("notification_log").insert({
-      complaint_id,
-      response_id,
-      recipient_email: profile.email,
-      notification_type: "response",
-      dedupe_key: dedupeKey,
-      status: "sending",
-    });
-
-    if (logErr) {
-      // Unique constraint violation = already sent
-      if (logErr.code === "23505") {
-        return new Response(
-          JSON.stringify({ success: true, message: "Already notified" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      throw logErr;
-    }
-
     const statusLabels: Record<string, string> = {
       pending: "Pending",
       in_review: "In Review",
       resolved: "Resolved",
       closed: "Closed",
     };
+
+    const priorityLabels: Record<string, string> = {
+      low: "Low",
+      medium: "Medium",
+      high: "High",
+    };
+
+    // Insert log first for dedup
+    const { error: logErr } = await supabase.from("notification_log").insert({
+      complaint_id,
+      recipient_email: profile.email,
+      notification_type: "status_change",
+      dedupe_key: dedupeKey,
+      status: "sending",
+    });
+
+    if (logErr) throw logErr;
 
     // Send email via Resend
     const emailRes = await fetch("https://api.resend.com/emails", {
@@ -106,21 +105,27 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         from: "Complaints <onboarding@resend.dev>",
         to: [profile.email],
-        subject: `Update on your complaint: ${complaint.reference_id || complaint.subject}`,
+        subject: `Status Update: ${complaint.reference_id || complaint.subject} — ${statusLabels[new_status] || new_status}`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #1a1a1a;">New Response on Your Complaint</h2>
+            <h2 style="color: #1a1a1a;">Complaint Status Updated</h2>
             <p>Hi ${profile.display_name || "there"},</p>
-            <p>An admin has responded to your complaint.</p>
+            <p>The status of your complaint has been updated.</p>
             <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
               <tr><td style="padding: 8px; font-weight: bold; color: #666;">Reference</td><td style="padding: 8px;">${complaint.reference_id || "N/A"}</td></tr>
               <tr><td style="padding: 8px; font-weight: bold; color: #666;">Subject</td><td style="padding: 8px;">${complaint.subject}</td></tr>
-              <tr><td style="padding: 8px; font-weight: bold; color: #666;">Status</td><td style="padding: 8px;">${statusLabels[complaint.status] || complaint.status}</td></tr>
+              <tr><td style="padding: 8px; font-weight: bold; color: #666;">Priority</td><td style="padding: 8px;">${priorityLabels[complaint.priority] || complaint.priority}</td></tr>
             </table>
-            <div style="background: #f5f5f5; border-left: 4px solid #3b82f6; padding: 16px; margin: 16px 0; border-radius: 4px;">
-              <p style="margin: 0; white-space: pre-wrap;">${response.message}</p>
+            <div style="display: flex; align-items: center; gap: 12px; margin: 20px 0;">
+              <div style="background: #fee2e2; color: #991b1b; padding: 8px 16px; border-radius: 6px; font-weight: 600;">
+                ${statusLabels[old_status] || old_status}
+              </div>
+              <div style="font-size: 20px; color: #999;">→</div>
+              <div style="background: #dcfce7; color: #166534; padding: 8px 16px; border-radius: 6px; font-weight: 600;">
+                ${statusLabels[new_status] || new_status}
+              </div>
             </div>
-            <p style="color: #888; font-size: 12px;">This is an automated notification. Please log in to view the full conversation.</p>
+            <p style="color: #888; font-size: 12px;">This is an automated notification. Please log in to view your complaint details.</p>
           </div>
         `,
       }),
@@ -132,23 +137,21 @@ Deno.serve(async (req) => {
       await supabase
         .from("notification_log")
         .update({ status: "failed", error_message: JSON.stringify(emailData) })
-        .eq("response_id", response_id);
-
+        .eq("dedupe_key", dedupeKey);
       throw new Error(`Resend error: ${JSON.stringify(emailData)}`);
     }
 
-    // Mark as sent
     await supabase
       .from("notification_log")
       .update({ status: "sent" })
-      .eq("response_id", response_id);
+      .eq("dedupe_key", dedupeKey);
 
     return new Response(
       JSON.stringify({ success: true }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
-    console.error("Notification error:", error);
+    console.error("Status notification error:", error);
     const msg = error instanceof Error ? error.message : "Unknown error";
     return new Response(
       JSON.stringify({ success: false, error: msg }),
