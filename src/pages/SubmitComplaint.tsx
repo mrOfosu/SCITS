@@ -77,7 +77,7 @@ export default function SubmitComplaint() {
       attachment_url = path;
     }
 
-    const { error } = await supabase.from("complaints").insert({
+    const { data: inserted, error } = await supabase.from("complaints").insert({
       user_id: user.id,
       category: category as Category,
       priority: priority as Priority,
@@ -85,12 +85,20 @@ export default function SubmitComplaint() {
       subject,
       description,
       attachment_url,
-    });
+    }).select("id").single();
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Complaint submitted", description: "Your complaint has been recorded." });
+      // Notify admins via email (fire-and-forget)
+      if (inserted?.id) {
+        supabase.functions.invoke("notify-new-complaint", {
+          body: { complaint_id: inserted.id },
+        }).then(({ error: notifErr }) => {
+          if (notifErr) console.error("Admin notification failed:", notifErr);
+        });
+      }
       navigate("/");
     }
     setLoading(false);
