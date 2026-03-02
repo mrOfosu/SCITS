@@ -22,8 +22,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { profile, loading: profileLoading } = useProfile();
   if (isLoading || profileLoading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
   if (!user) return <Navigate to="/auth" replace />;
-  // Admins skip profile completion check
-  if (!isAdmin && profile && !profile.profile_completed) return <Navigate to="/complete-profile" replace />;
+  // Redirect admins away from student pages
+  if (isAdmin) return <Navigate to="/admin" replace />;
+  if (profile && !profile.profile_completed) return <Navigate to="/complete-profile" replace />;
   return <Layout>{children}</Layout>;
 }
 
