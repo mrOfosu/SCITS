@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, LogOut, Home, PlusCircle, Shield, User } from "lucide-react";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
@@ -44,6 +45,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <Shield className="h-3 w-3" /> Admin
               </div>
             )}
+            <NotificationBell />
             <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
