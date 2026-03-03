@@ -139,7 +139,14 @@ Deno.serve(async (req) => {
         .update({ status: "failed", error_message: JSON.stringify(emailData) })
         .eq("response_id", response_id);
 
-      throw new Error(`Resend error: ${JSON.stringify(emailData)}`);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Resend error: ${JSON.stringify(emailData)}`,
+          code: "EMAIL_DELIVERY_FAILED",
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Mark as sent
