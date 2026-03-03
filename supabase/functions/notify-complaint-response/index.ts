@@ -12,7 +12,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    const rawResendApiKey = Deno.env.get("RESEND_API_KEY") ?? "";
+    const RESEND_API_KEY = rawResendApiKey
+      .trim()
+      .replace(/^['"]|['"]$/g, "")
+      .replace(/^RESEND_API_KEY\s*=\s*/i, "")
+      .replace(/^Bearer\s+/i, "");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
