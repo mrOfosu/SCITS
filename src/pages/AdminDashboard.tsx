@@ -216,7 +216,7 @@ export default function AdminDashboard() {
                   </TableCell>
                   <TableCell className="text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
-                    <Link to={`/complaint/${c.id}`}>
+                    <Link to={`/admin/complaint/${c.id}`}>
                       <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
                     </Link>
                   </TableCell>
