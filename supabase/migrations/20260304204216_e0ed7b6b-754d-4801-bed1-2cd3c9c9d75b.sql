@@ -1,0 +1,1 @@
+DELETE FROM notification_log WHERE response_id = '1cab2fc4-66d4-4ebd-8ea1-51253b276cb0';
