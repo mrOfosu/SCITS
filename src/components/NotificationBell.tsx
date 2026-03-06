@@ -9,7 +9,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { cn } from "@/lib/utils";
 
 interface Notification {
@@ -117,7 +117,11 @@ export default function NotificationBell() {
             </button>
           )}
         </div>
-        <ScrollArea className="max-h-80" style={{ overscrollBehavior: 'contain' }}>
+        <div
+          className="max-h-80 overflow-y-auto overscroll-contain"
+          onWheelCapture={(e) => e.stopPropagation()}
+          onTouchMoveCapture={(e) => e.stopPropagation()}
+        >
           {notifications.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               No notifications yet.
@@ -149,7 +153,7 @@ export default function NotificationBell() {
               </button>
             ))
           )}
-        </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   );
