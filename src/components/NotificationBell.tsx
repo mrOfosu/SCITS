@@ -22,7 +22,7 @@ interface Notification {
 }
 
 export default function NotificationBell() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -77,7 +77,8 @@ export default function NotificationBell() {
     }
     setOpen(false);
     if (notif.complaint_id) {
-      navigate(`/complaint/${notif.complaint_id}`);
+      const basePath = isAdmin ? "/admin/complaint" : "/complaint";
+      navigate(`${basePath}/${notif.complaint_id}`);
     }
   };
 
