@@ -59,6 +59,7 @@ const transitionLabels: Record<string, string> = {
 
 export default function ComplaintDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const [complaint, setComplaint] = useState<Tables<"complaints"> | null>(null);
   const [responses, setResponses] = useState<ResponseWithProfile[]>([]);
@@ -179,6 +180,12 @@ export default function ComplaintDetail() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {isAdmin && <AdminBreadcrumb />}
+      {isAdmin && (
+        <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} className="gap-1.5">
+          <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+        </Button>
+      )}
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
