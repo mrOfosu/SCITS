@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import AttachmentPreview from "@/components/AttachmentPreview";
+import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb";
 import ActivityLog from "@/components/ActivityLog";
 import type { ActivityEntry } from "@/components/ActivityLog";
 import type { Tables, Database } from "@/integrations/supabase/types";
@@ -58,6 +59,7 @@ const transitionLabels: Record<string, string> = {
 
 export default function ComplaintDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const [complaint, setComplaint] = useState<Tables<"complaints"> | null>(null);
   const [responses, setResponses] = useState<ResponseWithProfile[]>([]);
@@ -178,6 +180,12 @@ export default function ComplaintDetail() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
+      {isAdmin && <AdminBreadcrumb />}
+      {isAdmin && (
+        <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} className="gap-1.5">
+          <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+        </Button>
+      )}
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
