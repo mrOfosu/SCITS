@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -71,6 +72,7 @@ export default function ComplaintDetail() {
   const [transitioning, setTransitioning] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
 
   const fetchData = async () => {
     if (!id) return;
@@ -298,9 +300,17 @@ export default function ComplaintDetail() {
                 {statusConfig[nextStatus]?.label}
               </Badge>
             </div>
-            <Button size="sm" onClick={handleTransition} disabled={transitioning}>
+            <Button size="sm" onClick={() => setShowStatusConfirm(true)} disabled={transitioning}>
               {transitioning ? "Updating..." : transitionLabels[nextStatus] || "Advance"}
             </Button>
+            <ConfirmDialog
+              open={showStatusConfirm}
+              onOpenChange={setShowStatusConfirm}
+              title="Change Complaint Status"
+              description={`Are you sure you want to change the status from "${statusConfig[complaint.status]?.label}" to "${statusConfig[nextStatus]?.label}"? This action will be logged and the student will be notified.`}
+              confirmLabel={transitionLabels[nextStatus] || "Advance"}
+              onConfirm={() => { setShowStatusConfirm(false); handleTransition(); }}
+            />
           </CardContent>
         </Card>
       )}

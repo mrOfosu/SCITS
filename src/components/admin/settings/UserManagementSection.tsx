@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "@/hooks/use-toast";
 import { Users, Search, ShieldCheck, UserX, Trash2 } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface UserProfile {
   id: string;
@@ -22,6 +23,7 @@ export default function UserManagementSection() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [confirmTarget, setConfirmTarget] = useState<{ userId: string; isAdmin: boolean } | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -140,7 +142,7 @@ export default function UserManagementSection() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => toggleAdmin(user.id, user.isAdmin)}
+                            onClick={() => setConfirmTarget({ userId: user.id, isAdmin: user.isAdmin })}
                             className="text-xs"
                           >
                             <ShieldCheck className="mr-1 h-3 w-3" />
@@ -156,6 +158,25 @@ export default function UserManagementSection() {
           )}
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={!!confirmTarget}
+        onOpenChange={(open) => !open && setConfirmTarget(null)}
+        title={confirmTarget?.isAdmin ? "Remove Admin Role" : "Grant Admin Role"}
+        description={
+          confirmTarget?.isAdmin
+            ? "Are you sure you want to remove admin privileges from this user? They will lose access to admin features."
+            : "Are you sure you want to grant admin privileges to this user? They will have full access to manage complaints and settings."
+        }
+        confirmLabel={confirmTarget?.isAdmin ? "Remove Admin" : "Make Admin"}
+        variant={confirmTarget?.isAdmin ? "destructive" : "default"}
+        onConfirm={() => {
+          if (confirmTarget) {
+            toggleAdmin(confirmTarget.userId, confirmTarget.isAdmin);
+            setConfirmTarget(null);
+          }
+        }}
+      />
     </div>
   );
 }

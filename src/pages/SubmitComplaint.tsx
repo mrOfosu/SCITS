@@ -104,6 +104,19 @@ export default function SubmitComplaint() {
         }).then(({ error: notifErr }) => {
           if (notifErr) console.error("Admin notification failed:", notifErr);
         });
+        // Auto-assign if enabled (fire-and-forget)
+        try {
+          const savedPrefs = localStorage.getItem("system-preferences");
+          const prefs = savedPrefs ? JSON.parse(savedPrefs) : {};
+          if (prefs.autoAssign) {
+            supabase.functions.invoke("auto-assign-complaint", {
+              body: { complaint_id: inserted.id },
+            }).then(({ error: assignErr }) => {
+              if (assignErr) console.error("Auto-assign failed:", assignErr);
+            });
+          }
+        } catch {}
+
       }
       navigate("/");
     }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { LayoutDashboard, FileText, Bell, BarChart3, Settings, LogOut, GraduationCap, Shield } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +17,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const navItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
@@ -30,6 +32,7 @@ export default function AdminSidebar() {
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
   const isMobile = useIsMobile();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleNavClick = () => {
     if (isMobile) setOpenMobile(false);
@@ -76,10 +79,19 @@ export default function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t p-2">
-        <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={signOut}>
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => setShowLogoutConfirm(true)}>
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>Sign Out</span>}
         </Button>
+        <ConfirmDialog
+          open={showLogoutConfirm}
+          onOpenChange={setShowLogoutConfirm}
+          title="Sign Out"
+          description="Are you sure you want to sign out? You'll need to log in again to access your account."
+          confirmLabel="Sign Out"
+          variant="destructive"
+          onConfirm={signOut}
+        />
       </SidebarFooter>
     </Sidebar>
   );

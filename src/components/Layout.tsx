@@ -1,13 +1,15 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, LogOut, Home, PlusCircle, Shield, User } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const navItems = isAdmin
     ? [
@@ -46,10 +48,19 @@ export default function Layout({ children }: { children: ReactNode }) {
               </div>
             )}
             <NotificationBell />
-            <Button variant="ghost" size="icon" onClick={signOut} title="Sign out">
+            <Button variant="ghost" size="icon" onClick={() => setShowLogoutConfirm(true)} title="Sign out">
               <LogOut className="h-4 w-4" />
             </Button>
           </nav>
+          <ConfirmDialog
+            open={showLogoutConfirm}
+            onOpenChange={setShowLogoutConfirm}
+            title="Sign Out"
+            description="Are you sure you want to sign out? You'll need to log in again to access your account."
+            confirmLabel="Sign Out"
+            variant="destructive"
+            onConfirm={signOut}
+          />
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
