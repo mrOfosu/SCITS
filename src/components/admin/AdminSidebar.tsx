@@ -17,6 +17,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const navItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
