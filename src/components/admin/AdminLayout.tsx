@@ -4,8 +4,11 @@ import AdminSidebar from "./AdminSidebar";
 import NotificationBell from "@/components/NotificationBell";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
+  const savedSidebar = localStorage.getItem("admin-sidebar-style");
+  const defaultOpen = savedSidebar !== "compact";
+
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={defaultOpen}>
       <div className="min-h-screen flex w-full">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0">
