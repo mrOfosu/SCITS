@@ -23,6 +23,7 @@ export default function UserManagementSection() {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [confirmTarget, setConfirmTarget] = useState<{ userId: string; isAdmin: boolean } | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
