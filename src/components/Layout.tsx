@@ -1,9 +1,10 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, LogOut, Home, PlusCircle, Shield, User } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
