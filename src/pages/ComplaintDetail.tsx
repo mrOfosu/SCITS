@@ -127,6 +127,29 @@ export default function ComplaintDetail() {
 
   useEffect(() => { fetchData(); }, [id]);
 
+  // Load AI summary for admins
+  useEffect(() => {
+    if (!isAdmin || !complaint) return;
+    if ((complaint as any).ai_summary) {
+      setAiSummary((complaint as any).ai_summary);
+    }
+  }, [complaint, isAdmin]);
+
+  const generateAiSummary = async () => {
+    if (!id) return;
+    setGeneratingSummary(true);
+    const { data, error } = await supabase.functions.invoke("generate-ai-summary", {
+      body: { complaint_id: id },
+    });
+    if (error) {
+      toast({ title: "Error", description: "Failed to generate AI summary", variant: "destructive" });
+    } else {
+      setAiSummary(data?.summary || "Summary unavailable.");
+      toast({ title: "AI Summary generated" });
+    }
+    setGeneratingSummary(false);
+  };
+
   const nextStatus = complaint ? nextStatusMap[complaint.status] : null;
 
   const handleTransition = async () => {
