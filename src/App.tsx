@@ -57,9 +57,13 @@ function CompleteProfileRoute() {
   return <CompleteProfile />;
 }
 
-const App = () => {
-  useAppPreferences();
+function AppPreferences({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  useAppPreferences(user?.id);
+  return <>{children}</>;
+}
 
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -67,21 +71,23 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <Routes>
-              <Route path="/auth" element={<AuthRoute />} />
-              <Route path="/complete-profile" element={<CompleteProfileRoute />} />
-              <Route path="/" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
-              <Route path="/submit" element={<ProtectedRoute><SubmitComplaint /></ProtectedRoute>} />
-              <Route path="/complaint/:id" element={<ProtectedRoute><ComplaintDetail /></ProtectedRoute>} />
-              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-              <Route path="/admin/complaints" element={<AdminRoute><AdminComplaints /></AdminRoute>} />
-              <Route path="/admin/complaint/:id" element={<AdminRoute><ComplaintDetail /></AdminRoute>} />
-              <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
-              <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
-              <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AppPreferences>
+              <Routes>
+                <Route path="/auth" element={<AuthRoute />} />
+                <Route path="/complete-profile" element={<CompleteProfileRoute />} />
+                <Route path="/" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
+                <Route path="/submit" element={<ProtectedRoute><SubmitComplaint /></ProtectedRoute>} />
+                <Route path="/complaint/:id" element={<ProtectedRoute><ComplaintDetail /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                <Route path="/admin/complaints" element={<AdminRoute><AdminComplaints /></AdminRoute>} />
+                <Route path="/admin/complaint/:id" element={<AdminRoute><ComplaintDetail /></AdminRoute>} />
+                <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
+                <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
+                <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AppPreferences>
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
