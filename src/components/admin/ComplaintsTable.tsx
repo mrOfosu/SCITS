@@ -30,6 +30,14 @@ interface ComplaintsTableProps {
   complaints: ComplaintWithProfile[];
 }
 
+const OVERDUE_DAYS = 7;
+
+function isOverdue(complaint: ComplaintWithProfile) {
+  if (complaint.status === "resolved" || complaint.status === "closed") return false;
+  const created = new Date(complaint.created_at);
+  return (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24) > OVERDUE_DAYS;
+}
+
 export default function ComplaintsTable({ complaints }: ComplaintsTableProps) {
   return (
     <Card>
