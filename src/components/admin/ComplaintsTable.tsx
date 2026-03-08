@@ -107,7 +107,8 @@ export default function ComplaintsTable({ complaints }: ComplaintsTableProps) {
                   </Link>
                 </TableCell>
               </TableRow>
-            ))
+              );
+            })
           )}
         </TableBody>
       </Table>
