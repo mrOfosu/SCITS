@@ -183,7 +183,7 @@ export default function ComplaintDetail() {
       {isAdmin && <AdminBreadcrumb />}
       {isAdmin && (
         <Button variant="ghost" size="sm" onClick={() => navigate("/admin/complaints")} className="gap-1.5">
-          <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+          <ArrowLeft className="h-4 w-4" /> Back to Complaints
         </Button>
       )}
       <Card>

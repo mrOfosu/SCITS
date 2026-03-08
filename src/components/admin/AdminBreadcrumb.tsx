@@ -8,10 +8,26 @@ interface BreadcrumbItem {
 
 export default function AdminBreadcrumb() {
   const location = useLocation();
-  const items: BreadcrumbItem[] = [{ label: "Dashboard", path: "/admin" }];
+  const items: BreadcrumbItem[] = [];
 
-  if (location.pathname.startsWith("/admin/complaint/")) {
+  if (location.pathname === "/admin") {
+    items.push({ label: "Dashboard" });
+  } else if (location.pathname === "/admin/complaints") {
+    items.push({ label: "Dashboard", path: "/admin" });
+    items.push({ label: "Complaints" });
+  } else if (location.pathname.startsWith("/admin/complaint/")) {
+    items.push({ label: "Dashboard", path: "/admin" });
+    items.push({ label: "Complaints", path: "/admin/complaints" });
     items.push({ label: "Complaint Details" });
+  } else if (location.pathname === "/admin/notifications") {
+    items.push({ label: "Dashboard", path: "/admin" });
+    items.push({ label: "Notifications" });
+  } else if (location.pathname === "/admin/reports") {
+    items.push({ label: "Dashboard", path: "/admin" });
+    items.push({ label: "Reports" });
+  } else if (location.pathname === "/admin/settings") {
+    items.push({ label: "Dashboard", path: "/admin" });
+    items.push({ label: "Settings" });
   }
 
   return (
