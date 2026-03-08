@@ -9,6 +9,7 @@ import ConfirmDialog from "@/components/ConfirmDialog";
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const navItems = isAdmin
     ? [
