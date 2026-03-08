@@ -79,10 +79,19 @@ export default function AdminSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t p-2">
-        <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={signOut}>
+        <Button variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={() => setShowLogoutConfirm(true)}>
           <LogOut className="h-4 w-4" />
           {!collapsed && <span>Sign Out</span>}
         </Button>
+        <ConfirmDialog
+          open={showLogoutConfirm}
+          onOpenChange={setShowLogoutConfirm}
+          title="Sign Out"
+          description="Are you sure you want to sign out? You'll need to log in again to access your account."
+          confirmLabel="Sign Out"
+          variant="destructive"
+          onConfirm={signOut}
+        />
       </SidebarFooter>
     </Sidebar>
   );
