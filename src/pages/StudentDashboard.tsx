@@ -106,6 +106,8 @@ export default function StudentDashboard() {
           ))}
         </div>
       )}
+
+      <StudentChatbot />
     </div>
   );
 }
