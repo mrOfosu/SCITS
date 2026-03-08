@@ -47,8 +47,8 @@ async function exportPDF(complaints: ComplaintWithProfile[]) {
   const { default: jsPDF } = await import("jspdf");
   const autoTableModule = await import("jspdf-autotable");
   // Apply the plugin if it didn't auto-register
-  if (typeof (jsPDF.prototype as any).autoTable !== "function" && autoTableModule.default) {
-    autoTableModule.default(jsPDF);
+  if (typeof (jsPDF.prototype as any).autoTable !== "function") {
+    (autoTableModule as any).default?.(jsPDF);
   }
   const doc = new jsPDF({ orientation: "landscape" });
   doc.setFontSize(16);
