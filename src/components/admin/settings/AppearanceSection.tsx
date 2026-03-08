@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
-import { Palette, Sun, Moon, Monitor, Type, PanelLeft } from "lucide-react";
+import { Palette, Sun, Moon, Monitor, Type, PanelLeft, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebar } from "@/components/ui/sidebar";
+import { useAuth } from "@/hooks/useAuth";
+import { prefKey } from "@/hooks/useAppPreferences";
 
 const accentColors = [
   { name: "Default", value: "default", hsl: "222.2 47.4% 11.2%" },
@@ -19,6 +22,8 @@ const accentColors = [
 type ThemeMode = "light" | "dark" | "system";
 
 export default function AppearanceSection() {
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
   const [theme, setTheme] = useState<ThemeMode>("light");
   const [accentColor, setAccentColor] = useState("default");
   const [fontSize, setFontSize] = useState("medium");
@@ -26,7 +31,11 @@ export default function AppearanceSection() {
   const sidebarStyle = state === "expanded" ? "expanded" : "compact";
 
   useEffect(() => {
-    const saved = localStorage.getItem("admin-theme") as ThemeMode | null;
+    if (!userId) return;
+    // Remember last user for global initializer
+    localStorage.setItem("admin-last-user", userId);
+
+    const saved = localStorage.getItem(prefKey(userId, "theme")) as ThemeMode | null;
     if (saved) {
       setTheme(saved);
       applyThemeToDOM(saved);
@@ -34,11 +43,11 @@ export default function AppearanceSection() {
       const isDark = document.documentElement.classList.contains("dark");
       if (isDark) setTheme("dark");
     }
-    const savedAccent = localStorage.getItem("admin-accent");
+    const savedAccent = localStorage.getItem(prefKey(userId, "accent"));
     if (savedAccent) setAccentColor(savedAccent);
-    const savedFont = localStorage.getItem("admin-font-size");
+    const savedFont = localStorage.getItem(prefKey(userId, "font-size"));
     if (savedFont) setFontSize(savedFont);
-  }, []);
+  }, [userId]);
 
   // Listen for system theme changes when in "system" mode
   useEffect(() => {
@@ -64,13 +73,13 @@ export default function AppearanceSection() {
 
   const applyTheme = (mode: ThemeMode) => {
     setTheme(mode);
-    localStorage.setItem("admin-theme", mode);
+    localStorage.setItem(prefKey(userId, "theme"), mode);
     applyThemeToDOM(mode);
   };
 
   const applyAccent = (color: string) => {
     setAccentColor(color);
-    localStorage.setItem("admin-accent", color);
+    localStorage.setItem(prefKey(userId, "accent"), color);
     const found = accentColors.find(c => c.value === color);
     if (found && color !== "default") {
       document.documentElement.style.setProperty("--primary", found.hsl);
@@ -82,7 +91,7 @@ export default function AppearanceSection() {
 
   const applyFontSize = (size: string) => {
     setFontSize(size);
-    localStorage.setItem("admin-font-size", size);
+    localStorage.setItem(prefKey(userId, "font-size"), size);
     const root = document.documentElement;
     if (size === "small") root.style.fontSize = "14px";
     else if (size === "large") root.style.fontSize = "18px";
@@ -92,15 +101,42 @@ export default function AppearanceSection() {
   const handleSidebarStyle = (style: string) => {
     const expanded = style === "expanded";
     setOpen(expanded);
-    localStorage.setItem("admin-sidebar-style", style);
+    localStorage.setItem(prefKey(userId, "sidebar-style"), style);
     toast({ title: `Sidebar set to ${style}` });
+  };
+
+  const resetToDefaults = () => {
+    // Remove all per-user appearance keys
+    localStorage.removeItem(prefKey(userId, "theme"));
+    localStorage.removeItem(prefKey(userId, "accent"));
+    localStorage.removeItem(prefKey(userId, "font-size"));
+    localStorage.removeItem(prefKey(userId, "sidebar-style"));
+
+    // Reset DOM
+    document.documentElement.classList.remove("dark");
+    document.documentElement.style.removeProperty("--primary");
+    document.documentElement.style.fontSize = "16px";
+    setOpen(true);
+
+    // Reset state
+    setTheme("light");
+    setAccentColor("default");
+    setFontSize("medium");
+
+    toast({ title: "Appearance reset to defaults" });
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-foreground">Appearance</h2>
-        <p className="text-sm text-muted-foreground">Customize the look and feel of your dashboard</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">Appearance</h2>
+          <p className="text-sm text-muted-foreground">Customize the look and feel of your dashboard</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={resetToDefaults} className="gap-2">
+          <RotateCcw className="h-4 w-4" />
+          Reset to Defaults
+        </Button>
       </div>
 
       {/* Theme Mode */}
