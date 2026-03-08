@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
 import { Settings, ArrowRight, Bot, Bell } from "lucide-react";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 interface SystemPrefs {
   defaultPriority: string;
