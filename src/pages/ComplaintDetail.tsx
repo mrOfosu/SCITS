@@ -138,14 +138,16 @@ export default function ComplaintDetail() {
   const generateAiSummary = async () => {
     if (!id) return;
     setGeneratingSummary(true);
+    setAiSummary(null); // Clear to show loading state
     const { data, error } = await supabase.functions.invoke("generate-ai-summary", {
       body: { complaint_id: id },
     });
     if (error) {
       toast({ title: "Error", description: "Failed to generate AI summary", variant: "destructive" });
     } else {
-      setAiSummary(data?.summary || "Summary unavailable.");
-      toast({ title: "AI Summary generated" });
+      const newSummary = data?.summary || "Summary unavailable.";
+      setAiSummary(newSummary);
+      toast({ title: "AI Summary regenerated successfully" });
     }
     setGeneratingSummary(false);
   };
