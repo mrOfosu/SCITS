@@ -32,6 +32,7 @@ export default function AdminSidebar() {
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
   const isMobile = useIsMobile();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleNavClick = () => {
     if (isMobile) setOpenMobile(false);
