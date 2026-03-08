@@ -46,11 +46,15 @@ export default function KwameChatWindow({
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
-  const shouldShowComplaintButton = (content: string) =>
-    content.includes("submit a formal complaint") ||
-    content.includes("submit a complaint") ||
-    content.includes("submitting a complaint") ||
-    content.toLowerCase().includes("would you like to submit");
+  const shouldShowComplaintButton = (content: string) => {
+    const lower = content.toLowerCase();
+    return lower.includes("submit a complaint") ||
+      lower.includes("submitting a complaint") ||
+      lower.includes("submitting a formal complaint") ||
+      lower.includes("submit a formal complaint") ||
+      lower.includes("would you like to submit") ||
+      lower.includes("recommend submitting");
+  };
 
   const formatTime = (d: Date) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
