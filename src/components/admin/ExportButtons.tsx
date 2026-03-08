@@ -45,11 +45,7 @@ async function exportPDF(complaints: ComplaintWithProfile[]) {
   const rows = toRows(complaints);
   if (!rows.length) { toast({ title: "No data to export" }); return; }
   const { default: jsPDF } = await import("jspdf");
-  const autoTableModule = await import("jspdf-autotable");
-  // Apply the plugin if it didn't auto-register
-  if (typeof (jsPDF.prototype as any).autoTable !== "function") {
-    (autoTableModule as any).default?.(jsPDF);
-  }
+  const { default: autoTable } = await import("jspdf-autotable");
   const doc = new jsPDF({ orientation: "landscape" });
   doc.setFontSize(16);
   doc.text("Complaints Report", 14, 18);
@@ -59,7 +55,7 @@ async function exportPDF(complaints: ComplaintWithProfile[]) {
   const headers = Object.keys(rows[0]);
   const body = rows.map((r) => headers.map((h) => (r as Record<string, string>)[h]));
 
-  (doc as any).autoTable({
+  autoTable(doc, {
     head: [headers],
     body,
     startY: 30,
