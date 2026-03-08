@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { Palette, Sun, Moon, Monitor, Type, PanelLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSidebar } from "@/components/ui/sidebar";
 
 const accentColors = [
   { name: "Default", value: "default", hsl: "222.2 47.4% 11.2%" },
@@ -23,26 +22,36 @@ export default function AppearanceSection() {
   const [theme, setTheme] = useState<ThemeMode>("light");
   const [accentColor, setAccentColor] = useState("default");
   const [fontSize, setFontSize] = useState("medium");
-  const [sidebarStyle, setSidebarStyle] = useState("expanded");
+  const { state, setOpen } = useSidebar();
+  const sidebarStyle = state === "expanded" ? "expanded" : "compact";
 
   useEffect(() => {
     const saved = localStorage.getItem("admin-theme") as ThemeMode | null;
-    if (saved) setTheme(saved);
+    if (saved) {
+      setTheme(saved);
+      applyThemeToDOM(saved);
+    } else {
+      const isDark = document.documentElement.classList.contains("dark");
+      if (isDark) setTheme("dark");
+    }
     const savedAccent = localStorage.getItem("admin-accent");
     if (savedAccent) setAccentColor(savedAccent);
     const savedFont = localStorage.getItem("admin-font-size");
     if (savedFont) setFontSize(savedFont);
-    const savedSidebar = localStorage.getItem("admin-sidebar-style");
-    if (savedSidebar) setSidebarStyle(savedSidebar);
-
-    // Apply current theme
-    const isDark = document.documentElement.classList.contains("dark");
-    if (isDark) setTheme("dark");
   }, []);
 
-  const applyTheme = (mode: ThemeMode) => {
-    setTheme(mode);
-    localStorage.setItem("admin-theme", mode);
+  // Listen for system theme changes when in "system" mode
+  useEffect(() => {
+    if (theme !== "system") return;
+    const mql = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e: MediaQueryListEvent) => {
+      document.documentElement.classList.toggle("dark", e.matches);
+    };
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, [theme]);
+
+  const applyThemeToDOM = (mode: ThemeMode) => {
     if (mode === "dark") {
       document.documentElement.classList.add("dark");
     } else if (mode === "light") {
@@ -51,6 +60,12 @@ export default function AppearanceSection() {
       const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       document.documentElement.classList.toggle("dark", prefersDark);
     }
+  };
+
+  const applyTheme = (mode: ThemeMode) => {
+    setTheme(mode);
+    localStorage.setItem("admin-theme", mode);
+    applyThemeToDOM(mode);
   };
 
   const applyAccent = (color: string) => {
@@ -69,14 +84,14 @@ export default function AppearanceSection() {
     setFontSize(size);
     localStorage.setItem("admin-font-size", size);
     const root = document.documentElement;
-    root.classList.remove("text-sm", "text-base", "text-lg");
     if (size === "small") root.style.fontSize = "14px";
     else if (size === "large") root.style.fontSize = "18px";
     else root.style.fontSize = "16px";
   };
 
   const handleSidebarStyle = (style: string) => {
-    setSidebarStyle(style);
+    const expanded = style === "expanded";
+    setOpen(expanded);
     localStorage.setItem("admin-sidebar-style", style);
     toast({ title: `Sidebar set to ${style}` });
   };
