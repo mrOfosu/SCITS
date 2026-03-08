@@ -1,11 +1,12 @@
 import { useEffect, useState, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb";
 import StatsCards from "@/components/admin/StatsCards";
 import AdminCharts from "@/components/admin/AdminCharts";
-import AdminFilters, { type Filters, defaultFilters } from "@/components/admin/AdminFilters";
-import ComplaintsTable from "@/components/admin/ComplaintsTable";
-import ExportButtons from "@/components/admin/ExportButtons";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, FileText, Download, Bell, Eye } from "lucide-react";
 
 export interface ComplaintWithProfile {
   id: string;
@@ -23,10 +24,23 @@ export interface ComplaintWithProfile {
   profiles: { display_name: string; full_name: string | null; student_id: string | null; department: string | null } | null;
 }
 
+const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  pending: { label: "Pending", variant: "destructive" },
+  in_review: { label: "In Review", variant: "default" },
+  resolved: { label: "Resolved", variant: "secondary" },
+  closed: { label: "Closed", variant: "outline" },
+};
+
+const categoryLabels: Record<string, string> = {
+  academic: "Academic",
+  infrastructure: "Infrastructure",
+  administrative: "Administrative",
+  other: "Other",
+};
+
 export default function AdminDashboard() {
   const [complaints, setComplaints] = useState<ComplaintWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<Filters>(defaultFilters);
 
   useEffect(() => {
     supabase
@@ -38,38 +52,6 @@ export default function AdminDashboard() {
         setLoading(false);
       });
   }, []);
-
-  const departments = useMemo(() => {
-    const set = new Set<string>();
-    complaints.forEach((c) => { if (c.profiles?.department) set.add(c.profiles.department); });
-    return Array.from(set).sort();
-  }, [complaints]);
-
-  const filtered = useMemo(() => {
-    return complaints.filter((c) => {
-      if (filters.status !== "all" && c.status !== filters.status) return false;
-      if (filters.category !== "all" && c.category !== filters.category) return false;
-      if (filters.priority !== "all" && c.priority !== filters.priority) return false;
-      if (filters.department !== "all" && c.profiles?.department !== filters.department) return false;
-      if (filters.dateFrom && new Date(c.created_at) < filters.dateFrom) return false;
-      if (filters.dateTo) {
-        const end = new Date(filters.dateTo);
-        end.setHours(23, 59, 59, 999);
-        if (new Date(c.created_at) > end) return false;
-      }
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        const match =
-          c.subject.toLowerCase().includes(q) ||
-          c.reference_id?.toLowerCase().includes(q) ||
-          c.profiles?.full_name?.toLowerCase().includes(q) ||
-          c.profiles?.display_name?.toLowerCase().includes(q) ||
-          c.profiles?.student_id?.toLowerCase().includes(q);
-        if (!match) return false;
-      }
-      return true;
-    });
-  }, [complaints, filters]);
 
   const counts = useMemo(() => {
     const now = new Date();
@@ -97,31 +79,90 @@ export default function AdminDashboard() {
     return Math.round(totalMs / resolved.length / (1000 * 60 * 60 * 24));
   }, [complaints]);
 
+  const recentComplaints = useMemo(() => complaints.slice(0, 5), [complaints]);
+
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
 
   return (
     <div className="space-y-6">
-      <AdminBreadcrumb />
-
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage and respond to student complaints</p>
-        </div>
-        <ExportButtons complaints={filtered} />
+      <div>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">Overview of complaint analytics and trends</p>
       </div>
 
       <StatsCards counts={counts} avgResolutionDays={avgResolutionDays} />
 
-      <AdminCharts complaints={filtered} />
+      <AdminCharts complaints={complaints} />
 
-      <AdminFilters filters={filters} onChange={setFilters} departments={departments} />
+      {/* Recent Complaints */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-base">Recent Complaints</CardTitle>
+          <Link to="/admin/complaints">
+            <Button variant="outline" size="sm" className="gap-1.5">
+              View All Complaints <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </Link>
+        </CardHeader>
+        <CardContent>
+          {recentComplaints.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">No complaints yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {recentComplaints.map((c) => (
+                <Link
+                  key={c.id}
+                  to={`/admin/complaint/${c.id}`}
+                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground">{c.reference_id || "—"}</span>
+                      <span className="text-sm font-medium truncate">{c.subject}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                      <span>{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</span>
+                      <span>·</span>
+                      <span>{categoryLabels[c.category] || c.category}</span>
+                      <span>·</span>
+                      <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <Badge variant={statusConfig[c.status]?.variant || "outline"} className="shrink-0 ml-2">
+                    {statusConfig[c.status]?.label || c.status}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{filtered.length} complaint{filtered.length !== 1 ? "s" : ""}</p>
-      </div>
-
-      <ComplaintsTable complaints={filtered} />
+      {/* Quick Actions */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Quick Actions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/admin/complaints">
+              <Button variant="outline" className="gap-2">
+                <FileText className="h-4 w-4" /> View Complaints
+              </Button>
+            </Link>
+            <Link to="/admin/reports">
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" /> Export Reports
+              </Button>
+            </Link>
+            <Link to="/admin/notifications">
+              <Button variant="outline" className="gap-2">
+                <Bell className="h-4 w-4" /> View Notifications
+              </Button>
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
