@@ -1,6 +1,7 @@
 import { LayoutDashboard, FileText, Bell, BarChart3, Settings, LogOut, GraduationCap, Shield } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
   Sidebar,
   SidebarContent,
