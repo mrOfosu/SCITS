@@ -95,6 +95,7 @@ export type Database = {
       }
       complaints: {
         Row: {
+          ai_summary: string | null
           attachment_url: string | null
           category: Database["public"]["Enums"]["complaint_category"]
           created_at: string
@@ -109,6 +110,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          ai_summary?: string | null
           attachment_url?: string | null
           category: Database["public"]["Enums"]["complaint_category"]
           created_at?: string
@@ -123,6 +125,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          ai_summary?: string | null
           attachment_url?: string | null
           category?: Database["public"]["Enums"]["complaint_category"]
           created_at?: string

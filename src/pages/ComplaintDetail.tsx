@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, RefreshCw } from "lucide-react";
 import AttachmentPreview from "@/components/AttachmentPreview";
+import ReactMarkdown from "react-markdown";
 import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb";
 import ActivityLog from "@/components/ActivityLog";
 import type { ActivityEntry } from "@/components/ActivityLog";
@@ -68,6 +69,8 @@ export default function ComplaintDetail() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [generatingSummary, setGeneratingSummary] = useState(false);
 
   const fetchData = async () => {
     if (!id) return;
@@ -123,6 +126,29 @@ export default function ComplaintDetail() {
   };
 
   useEffect(() => { fetchData(); }, [id]);
+
+  // Load AI summary for admins
+  useEffect(() => {
+    if (!isAdmin || !complaint) return;
+    if ((complaint as any).ai_summary) {
+      setAiSummary((complaint as any).ai_summary);
+    }
+  }, [complaint, isAdmin]);
+
+  const generateAiSummary = async () => {
+    if (!id) return;
+    setGeneratingSummary(true);
+    const { data, error } = await supabase.functions.invoke("generate-ai-summary", {
+      body: { complaint_id: id },
+    });
+    if (error) {
+      toast({ title: "Error", description: "Failed to generate AI summary", variant: "destructive" });
+    } else {
+      setAiSummary(data?.summary || "Summary unavailable.");
+      toast({ title: "AI Summary generated" });
+    }
+    setGeneratingSummary(false);
+  };
 
   const nextStatus = complaint ? nextStatusMap[complaint.status] : null;
 
@@ -224,6 +250,38 @@ export default function ComplaintDetail() {
           )}
         </CardContent>
       </Card>
+
+      {/* AI Summary for Admins */}
+      {isAdmin && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <Sparkles className="h-4 w-4 text-primary" /> AI Summary (Kwame)
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={generateAiSummary}
+              disabled={generatingSummary}
+            >
+              <RefreshCw className={`h-3 w-3 ${generatingSummary ? "animate-spin" : ""}`} />
+              {aiSummary ? "Regenerate" : "Generate"}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {aiSummary ? (
+              <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                <ReactMarkdown>{aiSummary}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {generatingSummary ? "Generating summary..." : "No AI summary yet. Click Generate to create one."}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Admin status workflow */}
       {isAdmin && nextStatus && (

@@ -1,0 +1,1 @@
+ALTER TABLE public.complaints ADD COLUMN IF NOT EXISTS ai_summary text;
