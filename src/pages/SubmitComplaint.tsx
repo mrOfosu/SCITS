@@ -112,7 +112,7 @@ export default function SubmitComplaint() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]">
+      <div className={showAssistant ? "grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]" : ""}>
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -212,10 +212,22 @@ export default function SubmitComplaint() {
           </form>
         </Card>
 
-        {/* Kwame Form Assistant Side Panel */}
+        {/* Kwame Form Assistant - Side panel on large screens, overlay on small */}
         {showAssistant && (
-          <div className="hidden lg:block">
-            <div className="sticky top-4 h-[calc(100vh-8rem)]">
+          <>
+            {/* Large screens: side panel */}
+            <div className="hidden lg:block">
+              <div className="sticky top-4 h-[calc(100vh-8rem)]">
+                <KwameFormAssistant
+                  category={category}
+                  description={description}
+                  subject={subject}
+                  onClose={() => setShowAssistant(false)}
+                />
+              </div>
+            </div>
+            {/* Small screens: floating overlay */}
+            <div className="fixed inset-4 z-50 lg:hidden">
               <KwameFormAssistant
                 category={category}
                 description={description}
@@ -223,7 +235,7 @@ export default function SubmitComplaint() {
                 onClose={() => setShowAssistant(false)}
               />
             </div>
-          </div>
+          </>
         )}
       </div>
     </div>
