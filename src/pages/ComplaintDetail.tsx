@@ -251,6 +251,38 @@ export default function ComplaintDetail() {
         </CardContent>
       </Card>
 
+      {/* AI Summary for Admins */}
+      {isAdmin && (
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+              <Sparkles className="h-4 w-4 text-primary" /> AI Summary (Kwame)
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={generateAiSummary}
+              disabled={generatingSummary}
+            >
+              <RefreshCw className={`h-3 w-3 ${generatingSummary ? "animate-spin" : ""}`} />
+              {aiSummary ? "Regenerate" : "Generate"}
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {aiSummary ? (
+              <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                <ReactMarkdown>{aiSummary}</ReactMarkdown>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {generatingSummary ? "Generating summary..." : "No AI summary yet. Click Generate to create one."}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Admin status workflow */}
       {isAdmin && nextStatus && (
         <Card>
