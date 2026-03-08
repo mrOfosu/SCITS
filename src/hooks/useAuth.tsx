@@ -24,41 +24,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     const checkAdmin = async (userId: string) => {
       try {
-        const { data } = await supabase.rpc("has_role", {
+        const rpcPromise = supabase.rpc("has_role", {
           _user_id: userId,
           _role: "admin",
         });
-        setIsAdmin(!!data);
+
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error("Role check timeout")), 5000);
+        });
+
+        const { data } = await Promise.race([rpcPromise, timeoutPromise]);
+        if (mounted) setIsAdmin(!!data);
       } catch {
-        setIsAdmin(false);
+        if (mounted) setIsAdmin(false);
       }
     };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      setSession(session);
+      setIsLoading(false);
+
+      if (session?.user) {
+        void checkAdmin(session.user.id);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        if (!mounted) return;
         setSession(session);
+        setIsLoading(false);
+
         if (session?.user) {
-          await checkAdmin(session.user.id);
+          void checkAdmin(session.user.id);
         } else {
           setIsAdmin(false);
         }
-        setIsLoading(false);
-      }
-    );
+      })
+      .catch(() => {
+        if (mounted) {
+          setIsAdmin(false);
+          setIsLoading(false);
+        }
+      });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        await checkAdmin(session.user.id);
-      }
-      setIsLoading(false);
-    }).catch(() => {
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
