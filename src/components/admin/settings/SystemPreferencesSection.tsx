@@ -146,10 +146,28 @@ export default function SystemPreferencesSection() {
 
       {dirty && (
         <div className="flex gap-3">
-          <Button onClick={handleSave}>Save Preferences</Button>
-          <Button variant="outline" onClick={() => { setPrefs(defaultPrefs); setDirty(false); }}>Reset</Button>
+          <Button onClick={() => setShowSaveConfirm(true)}>Save Preferences</Button>
+          <Button variant="outline" onClick={() => setShowResetConfirm(true)}>Reset</Button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={showSaveConfirm}
+        onOpenChange={setShowSaveConfirm}
+        title="Save System Preferences"
+        description="Are you sure you want to save these changes? This will affect how the complaint system operates for all users."
+        confirmLabel="Save Changes"
+        onConfirm={() => { handleSave(); setShowSaveConfirm(false); }}
+      />
+      <ConfirmDialog
+        open={showResetConfirm}
+        onOpenChange={setShowResetConfirm}
+        title="Reset Preferences"
+        description="Are you sure you want to reset all preferences to their default values? This cannot be undone."
+        confirmLabel="Reset"
+        variant="destructive"
+        onConfirm={() => { setPrefs(defaultPrefs); setDirty(false); setShowResetConfirm(false); }}
+      />
     </div>
   );
 }
