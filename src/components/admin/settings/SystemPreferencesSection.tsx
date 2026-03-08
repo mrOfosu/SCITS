@@ -26,6 +26,8 @@ const defaultPrefs: SystemPrefs = {
 export default function SystemPreferencesSection() {
   const [prefs, setPrefs] = useState<SystemPrefs>(defaultPrefs);
   const [dirty, setDirty] = useState(false);
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("system-preferences");
