@@ -51,6 +51,11 @@ export default function AdminDashboard() {
         setComplaints((data as unknown as ComplaintWithProfile[]) || []);
         setLoading(false);
       });
+
+    // Fire-and-forget: check for overdue complaints and send admin notifications
+    supabase.functions.invoke("check-overdue-complaints").then(({ error }) => {
+      if (error) console.error("Overdue check failed:", error);
+    });
   }, []);
 
   const counts = useMemo(() => {
