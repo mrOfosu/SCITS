@@ -51,6 +51,11 @@ export default function AdminDashboard() {
         setComplaints((data as unknown as ComplaintWithProfile[]) || []);
         setLoading(false);
       });
+
+    // Fire-and-forget: check for overdue complaints and send admin notifications
+    supabase.functions.invoke("check-overdue-complaints").then(({ error }) => {
+      if (error) console.error("Overdue check failed:", error);
+    });
   }, []);
 
   const counts = useMemo(() => {
@@ -109,16 +114,24 @@ export default function AdminDashboard() {
             <p className="text-sm text-muted-foreground py-4 text-center">No complaints yet.</p>
           ) : (
             <div className="space-y-3">
-              {recentComplaints.map((c) => (
+              {recentComplaints.map((c) => {
+                const isOverdue =
+                  c.status !== "resolved" &&
+                  c.status !== "closed" &&
+                  (Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24) > 7;
+                return (
                 <Link
                   key={c.id}
                   to={`/admin/complaint/${c.id}`}
-                  className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50"
+                  className={`flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50 ${isOverdue ? "border-l-2 border-l-destructive bg-destructive/5" : ""}`}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs text-muted-foreground">{c.reference_id || "—"}</span>
                       <span className="text-sm font-medium truncate">{c.subject}</span>
+                      {isOverdue && (
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Overdue</Badge>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                       <span>{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</span>
@@ -132,7 +145,8 @@ export default function AdminDashboard() {
                     {statusConfig[c.status]?.label || c.status}
                   </Badge>
                 </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
