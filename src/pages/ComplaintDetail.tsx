@@ -72,6 +72,7 @@ export default function ComplaintDetail() {
   const [transitioning, setTransitioning] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [generatingSummary, setGeneratingSummary] = useState(false);
+  const [showStatusConfirm, setShowStatusConfirm] = useState(false);
 
   const fetchData = async () => {
     if (!id) return;
