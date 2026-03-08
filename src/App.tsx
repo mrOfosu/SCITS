@@ -57,32 +57,36 @@ function CompleteProfileRoute() {
   return <CompleteProfile />;
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/auth" element={<AuthRoute />} />
-            <Route path="/complete-profile" element={<CompleteProfileRoute />} />
-            <Route path="/" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
-            <Route path="/submit" element={<ProtectedRoute><SubmitComplaint /></ProtectedRoute>} />
-            <Route path="/complaint/:id" element={<ProtectedRoute><ComplaintDetail /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/complaints" element={<AdminRoute><AdminComplaints /></AdminRoute>} />
-            <Route path="/admin/complaint/:id" element={<AdminRoute><ComplaintDetail /></AdminRoute>} />
-            <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
-            <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
-            <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  useAppPreferences();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/auth" element={<AuthRoute />} />
+              <Route path="/complete-profile" element={<CompleteProfileRoute />} />
+              <Route path="/" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
+              <Route path="/submit" element={<ProtectedRoute><SubmitComplaint /></ProtectedRoute>} />
+              <Route path="/complaint/:id" element={<ProtectedRoute><ComplaintDetail /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+              <Route path="/admin/complaints" element={<AdminRoute><AdminComplaints /></AdminRoute>} />
+              <Route path="/admin/complaint/:id" element={<AdminRoute><ComplaintDetail /></AdminRoute>} />
+              <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
+              <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
+              <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
