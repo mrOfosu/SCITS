@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import StudentChatbot from "@/components/StudentChatbot";
+import KwameChatbot from "@/components/KwameChatbot";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
@@ -107,7 +107,7 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      <StudentChatbot />
+      <KwameChatbot />
     </div>
   );
 }
