@@ -2,9 +2,13 @@ import { ReactNode } from "react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AdminSidebar from "./AdminSidebar";
 import NotificationBell from "@/components/NotificationBell";
+import { useAuth } from "@/hooks/useAuth";
+import { prefKey } from "@/hooks/useAppPreferences";
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const savedSidebar = localStorage.getItem("admin-sidebar-style");
+  const { user } = useAuth();
+  const userId = user?.id ?? "";
+  const savedSidebar = userId ? localStorage.getItem(prefKey(userId, "sidebar-style")) : null;
   const defaultOpen = savedSidebar !== "compact";
 
   return (
