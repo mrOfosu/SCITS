@@ -182,8 +182,8 @@ export default function ComplaintDetail() {
     <div className="mx-auto max-w-2xl space-y-6">
       {isAdmin && <AdminBreadcrumb />}
       {isAdmin && (
-        <Button variant="ghost" size="sm" onClick={() => navigate("/admin")} className="gap-1.5">
-          <ArrowLeft className="h-4 w-4" /> Back to Dashboard
+        <Button variant="ghost" size="sm" onClick={() => navigate("/admin/complaints")} className="gap-1.5">
+          <ArrowLeft className="h-4 w-4" /> Back to Complaints
         </Button>
       )}
       <Card>
