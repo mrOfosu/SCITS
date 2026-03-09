@@ -67,10 +67,12 @@ function AuthRoute() {
 function CompleteProfileRoute() {
   const { user, isAdmin, isLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  if (isLoading || profileLoading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  
+  if (isLoading || profileLoading) return <RouteLoader />;
   if (!user) return <Navigate to="/auth" replace />;
   if (isAdmin || (profile && profile.profile_completed)) return <Navigate to="/" replace />;
-  return <CompleteProfile />;
+  
+  return <PageTransition><CompleteProfile /></PageTransition>;
 }
 
 function AppPreferences({ children }: { children: React.ReactNode }) {
