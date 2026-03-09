@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ComplaintListSkeleton } from "@/components/ui/skeleton-card";
 import { PlusCircle, Eye, Paperclip } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
 
