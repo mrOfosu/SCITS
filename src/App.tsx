@@ -43,10 +43,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, isLoading } = useAuth();
-  if (isLoading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  
+  if (isLoading) return <RouteLoader />;
   if (!user) return <Navigate to="/auth" replace />;
   if (!isAdmin) return <Navigate to="/" replace />;
-  return <AdminLayout>{children}</AdminLayout>;
+  
+  return (
+    <AdminLayout>
+      <PageTransition>{children}</PageTransition>
+    </AdminLayout>
+  );
 }
 
 function AuthRoute() {
