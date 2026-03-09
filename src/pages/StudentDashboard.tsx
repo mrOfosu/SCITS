@@ -48,7 +48,20 @@ export default function StudentDashboard() {
       });
   }, [user]);
 
-  if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-8 w-48 bg-muted rounded animate-pulse" />
+            <div className="h-5 w-80 bg-muted/60 rounded animate-pulse" />
+          </div>
+          <div className="h-10 w-36 bg-primary/20 rounded animate-pulse" />
+        </div>
+        <ComplaintListSkeleton />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
