@@ -2,10 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useAppPreferences } from "@/hooks/useAppPreferences";
 import { useProfile } from "@/hooks/useProfile";
+import PageTransition from "./components/PageTransition";
+import { RouteLoader } from "./components/RouteLoader";
 import Auth from "./pages/Auth";
 import StudentDashboard from "./pages/StudentDashboard";
 import SubmitComplaint from "./pages/SubmitComplaint";
@@ -26,35 +28,51 @@ const queryClient = new QueryClient();
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, isLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  if (isLoading || profileLoading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  
+  if (isLoading || profileLoading) return <RouteLoader />;
   if (!user) return <Navigate to="/auth" replace />;
   if (isAdmin) return <Navigate to="/admin" replace />;
   if (profile && !profile.profile_completed) return <Navigate to="/complete-profile" replace />;
-  return <Layout>{children}</Layout>;
+  
+  return (
+    <Layout>
+      <PageTransition>{children}</PageTransition>
+    </Layout>
+  );
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, isLoading } = useAuth();
-  if (isLoading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  
+  if (isLoading) return <RouteLoader />;
   if (!user) return <Navigate to="/auth" replace />;
   if (!isAdmin) return <Navigate to="/" replace />;
-  return <AdminLayout>{children}</AdminLayout>;
+  
+  return (
+    <AdminLayout>
+      <PageTransition>{children}</PageTransition>
+    </AdminLayout>
+  );
 }
 
 function AuthRoute() {
   const { user, isAdmin, isLoading } = useAuth();
-  if (isLoading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  
+  if (isLoading) return <RouteLoader />;
   if (user) return <Navigate to={isAdmin ? "/admin" : "/"} replace />;
-  return <Auth />;
+  
+  return <PageTransition><Auth /></PageTransition>;
 }
 
 function CompleteProfileRoute() {
   const { user, isAdmin, isLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  if (isLoading || profileLoading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  
+  if (isLoading || profileLoading) return <RouteLoader />;
   if (!user) return <Navigate to="/auth" replace />;
   if (isAdmin || (profile && profile.profile_completed)) return <Navigate to="/" replace />;
-  return <CompleteProfile />;
+  
+  return <PageTransition><CompleteProfile /></PageTransition>;
 }
 
 function AppPreferences({ children }: { children: React.ReactNode }) {
@@ -85,7 +103,7 @@ const App = () => {
                 <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
                 <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
                 <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-                <Route path="*" element={<NotFound />} />
+                <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
               </Routes>
             </AppPreferences>
           </AuthProvider>
