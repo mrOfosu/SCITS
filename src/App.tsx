@@ -57,9 +57,11 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 
 function AuthRoute() {
   const { user, isAdmin, isLoading } = useAuth();
-  if (isLoading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  
+  if (isLoading) return <RouteLoader />;
   if (user) return <Navigate to={isAdmin ? "/admin" : "/"} replace />;
-  return <Auth />;
+  
+  return <PageTransition><Auth /></PageTransition>;
 }
 
 function CompleteProfileRoute() {
