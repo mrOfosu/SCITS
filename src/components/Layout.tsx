@@ -23,9 +23,9 @@ export default function Layout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-200">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <Link to={isAdmin ? "/admin" : "/"} className="flex items-center gap-2 font-semibold">
+          <Link to={isAdmin ? "/admin" : "/"} className="flex items-center gap-2 font-semibold hover:scale-105 transition-transform duration-200">
             <GraduationCap className="h-5 w-5 text-primary" />
             <span className="hidden sm:inline">Complaint Tracker</span>
           </Link>
@@ -35,7 +35,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <Button
                   variant={location.pathname === item.to ? "secondary" : "ghost"}
                   size="sm"
-                  className="gap-1.5"
+                  className="gap-1.5 transition-all duration-200 hover:scale-105"
                 >
                   <item.icon className="h-4 w-4" />
                   <span className="hidden sm:inline">{item.label}</span>
@@ -43,12 +43,18 @@ export default function Layout({ children }: { children: ReactNode }) {
               </Link>
             ))}
             {isAdmin && (
-              <div className="ml-1 flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+              <div className="ml-1 flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary animate-fade-in">
                 <Shield className="h-3 w-3" /> Admin
               </div>
             )}
             <NotificationBell />
-            <Button variant="ghost" size="icon" onClick={() => setShowLogoutConfirm(true)} title="Sign out">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setShowLogoutConfirm(true)} 
+              title="Sign out"
+              className="hover:scale-110 transition-transform duration-200"
+            >
               <LogOut className="h-4 w-4" />
             </Button>
           </nav>

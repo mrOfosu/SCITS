@@ -103,7 +103,7 @@ const App = () => {
                 <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
                 <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
                 <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-                <Route path="*" element={<NotFound />} />
+                <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
               </Routes>
             </AppPreferences>
           </AuthProvider>
