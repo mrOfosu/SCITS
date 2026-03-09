@@ -64,14 +64,14 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">My Complaints</h1>
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold text-foreground">My Complaints</h1>
           <p className="text-muted-foreground">Track and manage your submitted complaints</p>
         </div>
         <Link to="/submit">
-          <Button className="gap-1.5">
+          <Button className="gap-1.5 hover:scale-105 transition-transform duration-200 shadow-sm hover:shadow-md">
             <PlusCircle className="h-4 w-4" /> New Complaint
           </Button>
         </Link>
