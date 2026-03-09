@@ -28,11 +28,17 @@ const queryClient = new QueryClient();
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isAdmin, isLoading } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
-  if (isLoading || profileLoading) return <div className="flex min-h-screen items-center justify-center text-muted-foreground">Loading...</div>;
+  
+  if (isLoading || profileLoading) return <RouteLoader />;
   if (!user) return <Navigate to="/auth" replace />;
   if (isAdmin) return <Navigate to="/admin" replace />;
   if (profile && !profile.profile_completed) return <Navigate to="/complete-profile" replace />;
-  return <Layout>{children}</Layout>;
+  
+  return (
+    <Layout>
+      <PageTransition>{children}</PageTransition>
+    </Layout>
+  );
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
