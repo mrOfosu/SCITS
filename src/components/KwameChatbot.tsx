@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import KwameChatWindow from "@/components/kwame/KwameChatWindow";
-import { MessageCircle } from "lucide-react";
+import kwameAvatar from "@/assets/kwame-avatar.png";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Message = {
@@ -179,10 +179,10 @@ export default function KwameChatbot({ initialMessage, mode = "dashboard" }: Kwa
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 active:scale-95"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-lg transition-transform hover:scale-105 active:scale-95 overflow-hidden"
         aria-label="Open Kwame chat"
       >
-        <MessageCircle className="h-6 w-6" />
+        <img src={kwameAvatar} alt="Kwame" className="h-full w-full object-cover" width={56} height={56} />
       </button>
     );
   }
