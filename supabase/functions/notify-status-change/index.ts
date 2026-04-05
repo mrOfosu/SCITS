@@ -139,11 +139,24 @@ Deno.serve(async (req) => {
     const emailData = await emailRes.json();
 
     if (!emailRes.ok) {
+      const isSandbox403 = emailRes.status === 403 || emailData?.statusCode === 403;
       await supabase
         .from("notification_log")
-        .update({ status: "failed", error_message: JSON.stringify(emailData) })
+        .update({ status: isSandbox403 ? "skipped_sandbox" : "failed", error_message: JSON.stringify(emailData) })
         .eq("dedupe_key", dedupeKey);
-      throw new Error(`Resend error: ${JSON.stringify(emailData)}`);
+
+      if (isSandbox403) {
+        console.warn("Resend sandbox restriction – skipping email silently");
+        return new Response(
+          JSON.stringify({ success: true, message: "Skipped (sandbox mode)" }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: false, error: `Resend error: ${JSON.stringify(emailData)}`, code: "EMAIL_DELIVERY_FAILED" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     await supabase
