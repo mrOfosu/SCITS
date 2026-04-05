@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/components/KwameChatbot";
+import kwameAvatar from "@/assets/kwame-avatar.png";
 
 const quickActions = [
   { label: "Report Bullying", icon: AlertTriangle, message: "I want to report a bullying incident at school." },
@@ -70,9 +71,7 @@ export default function KwameChatWindow({
       {/* Header */}
       <CardHeader className="flex flex-row items-center justify-between space-y-0 rounded-t-2xl bg-primary px-4 py-3 text-primary-foreground">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary-foreground/20 text-lg font-bold">
-            K
-          </div>
+          <img src={kwameAvatar} alt="Kwame" className="h-8 w-8 rounded-full object-cover" width={32} height={32} />
           <div>
             <CardTitle className="text-sm font-semibold">Kwame</CardTitle>
             <p className="text-[11px] opacity-80">Student Support Assistant</p>
@@ -94,9 +93,7 @@ export default function KwameChatWindow({
           {messages.map((msg) => (
             <div key={msg.id} className={cn("flex gap-2", msg.role === "user" ? "justify-end" : "justify-start")}>
               {msg.role === "assistant" && (
-                <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                  K
-                </div>
+                <img src={kwameAvatar} alt="Kwame" className="mt-1 h-7 w-7 shrink-0 rounded-full object-cover" width={28} height={28} />
               )}
               <div className="max-w-[80%] space-y-1">
                 <div
