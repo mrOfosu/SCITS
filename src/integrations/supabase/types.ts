@@ -61,6 +61,67 @@ export type Database = {
           },
         ]
       }
+      complaint_bookmarks: {
+        Row: {
+          complaint_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          complaint_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          complaint_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaint_bookmarks_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      complaint_feedback: {
+        Row: {
+          complaint_id: string
+          created_at: string
+          id: string
+          satisfied: boolean
+          user_id: string
+        }
+        Insert: {
+          complaint_id: string
+          created_at?: string
+          id?: string
+          satisfied: boolean
+          user_id: string
+        }
+        Update: {
+          complaint_id?: string
+          created_at?: string
+          id?: string
+          satisfied?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaint_feedback_complaint_id_fkey"
+            columns: ["complaint_id"]
+            isOneToOne: false
+            referencedRelation: "complaints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       complaint_responses: {
         Row: {
           complaint_id: string
@@ -96,10 +157,13 @@ export type Database = {
       complaints: {
         Row: {
           ai_summary: string | null
+          assigned_admin_id: string | null
           attachment_url: string | null
           category: Database["public"]["Enums"]["complaint_category"]
           created_at: string
           description: string
+          estimated_resolution_hours: number | null
+          has_new_updates: boolean
           id: string
           priority: Database["public"]["Enums"]["complaint_priority"]
           reference_id: string | null
@@ -111,10 +175,13 @@ export type Database = {
         }
         Insert: {
           ai_summary?: string | null
+          assigned_admin_id?: string | null
           attachment_url?: string | null
           category: Database["public"]["Enums"]["complaint_category"]
           created_at?: string
           description: string
+          estimated_resolution_hours?: number | null
+          has_new_updates?: boolean
           id?: string
           priority?: Database["public"]["Enums"]["complaint_priority"]
           reference_id?: string | null
@@ -126,10 +193,13 @@ export type Database = {
         }
         Update: {
           ai_summary?: string | null
+          assigned_admin_id?: string | null
           attachment_url?: string | null
           category?: Database["public"]["Enums"]["complaint_category"]
           created_at?: string
           description?: string
+          estimated_resolution_hours?: number | null
+          has_new_updates?: boolean
           id?: string
           priority?: Database["public"]["Enums"]["complaint_priority"]
           reference_id?: string | null

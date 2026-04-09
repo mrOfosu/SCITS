@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,13 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Sparkles, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Clock, User, Bookmark, BookmarkCheck, RotateCcw, Download } from "lucide-react";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ReactMarkdown from "react-markdown";
 import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb";
 import ActivityLog from "@/components/ActivityLog";
+import FeedbackPrompt from "@/components/FeedbackPrompt";
+import ComplaintPdfExport from "@/components/ComplaintPdfExport";
 import type { ActivityEntry } from "@/components/ActivityLog";
 import type { Tables, Database } from "@/integrations/supabase/types";
+import { timeAgo, estimatedResolutionLabel } from "@/lib/timeUtils";
 
 type ComplaintStatus = Database["public"]["Enums"]["complaint_status"];
 
@@ -73,11 +76,29 @@ export default function ComplaintDetail() {
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [feedback, setFeedback] = useState<boolean | null | undefined>(undefined);
+  const [assignedAdmin, setAssignedAdmin] = useState<string | null>(null);
 
-  const fetchData = async () => {
-    if (!id) return;
+  const fetchData = useCallback(async () => {
+    if (!id || !user) return;
     const { data: comp } = await supabase.from("complaints").select("*").eq("id", id).maybeSingle();
     setComplaint(comp);
+
+    // Clear new updates flag for student
+    if (comp && !isAdmin && (comp as any).has_new_updates) {
+      supabase.from("complaints").update({ has_new_updates: false } as any).eq("id", id).then(() => {});
+    }
+
+    // Fetch assigned admin name
+    if (comp && (comp as any).assigned_admin_id) {
+      const { data: adminProfile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", (comp as any).assigned_admin_id)
+        .maybeSingle();
+      setAssignedAdmin(adminProfile?.display_name || null);
+    }
 
     const { data: resp } = await supabase
       .from("complaint_responses")
@@ -124,12 +145,29 @@ export default function ComplaintDetail() {
     }
     setActivity(enrichedAct);
 
+    // Fetch bookmark status
+    const { data: bm } = await supabase
+      .from("complaint_bookmarks")
+      .select("id")
+      .eq("complaint_id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    setBookmarked(!!bm);
+
+    // Fetch feedback
+    const { data: fb } = await supabase
+      .from("complaint_feedback")
+      .select("satisfied")
+      .eq("complaint_id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    setFeedback(fb ? fb.satisfied : null);
+
     setLoading(false);
-  };
+  }, [id, user, isAdmin]);
 
-  useEffect(() => { fetchData(); }, [id]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Load AI summary for admins
   useEffect(() => {
     if (!isAdmin || !complaint) return;
     if ((complaint as any).ai_summary) {
@@ -140,7 +178,7 @@ export default function ComplaintDetail() {
   const generateAiSummary = async () => {
     if (!id) return;
     setGeneratingSummary(true);
-    setAiSummary(null); // Clear to show loading state
+    setAiSummary(null);
     const { data, error } = await supabase.functions.invoke("generate-ai-summary", {
       body: { complaint_id: id },
     });
@@ -168,12 +206,27 @@ export default function ComplaintDetail() {
       toast({ title: "Invalid transition", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Status updated", description: `Moved to ${statusConfig[nextStatus]?.label}` });
-      // Send status change notification (fire-and-forget)
       supabase.functions.invoke("notify-status-change", {
         body: { complaint_id: id, old_status: oldStatus, new_status: nextStatus },
       }).then(({ error: notifErr }) => {
         if (notifErr) console.error("Status notification failed:", notifErr);
       });
+      fetchData();
+    }
+    setTransitioning(false);
+  };
+
+  const handleReopen = async () => {
+    if (!id || !complaint) return;
+    setTransitioning(true);
+    const { error } = await supabase
+      .from("complaints")
+      .update({ status: "in_review" as ComplaintStatus })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Complaint reopened", description: "Status changed to In Review" });
       fetchData();
     }
     setTransitioning(false);
@@ -192,7 +245,6 @@ export default function ComplaintDetail() {
     } else {
       toast({ title: "Response sent" });
       setNewMessage("");
-      // Send email notification (fire-and-forget, don't block UI)
       if (isAdmin && inserted?.id) {
         supabase.functions.invoke("notify-complaint-response", {
           body: { complaint_id: id, response_id: inserted.id },
@@ -205,17 +257,49 @@ export default function ComplaintDetail() {
     setSending(false);
   };
 
+  const toggleBookmark = async () => {
+    if (!user || !id) return;
+    if (bookmarked) {
+      await supabase.from("complaint_bookmarks").delete().eq("complaint_id", id).eq("user_id", user.id);
+      setBookmarked(false);
+      toast({ title: "Bookmark removed" });
+    } else {
+      await supabase.from("complaint_bookmarks").insert({ complaint_id: id, user_id: user.id });
+      setBookmarked(true);
+      toast({ title: "Complaint bookmarked" });
+    }
+  };
+
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
   if (!complaint) return <div className="py-12 text-center text-muted-foreground">Complaint not found.</div>;
+
+  const isOwner = user?.id === complaint.user_id;
+  const showFeedback = isOwner && complaint.status === "resolved";
+  const canReopen = isOwner && complaint.status === "resolved" && feedback === false;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {isAdmin && <AdminBreadcrumb />}
-      {isAdmin && (
-        <Button variant="ghost" size="sm" onClick={() => navigate("/admin/complaints")} className="gap-1.5">
-          <ArrowLeft className="h-4 w-4" /> Back to Complaints
-        </Button>
-      )}
+      <div className="flex items-center justify-between">
+        {isAdmin ? (
+          <Button variant="ghost" size="sm" onClick={() => navigate("/admin/complaints")} className="gap-1.5">
+            <ArrowLeft className="h-4 w-4" /> Back to Complaints
+          </Button>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="gap-1.5">
+            <ArrowLeft className="h-4 w-4" /> Back
+          </Button>
+        )}
+        <div className="flex items-center gap-2">
+          <ComplaintPdfExport complaint={complaint} responses={responses} />
+          {!isAdmin && (
+            <Button variant="ghost" size="icon" onClick={toggleBookmark} className="h-8 w-8">
+              {bookmarked ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
+            </Button>
+          )}
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between">
@@ -248,6 +332,24 @@ export default function ComplaintDetail() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Info row: estimated time, last updated, assigned admin */}
+          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground border-b pb-3">
+            <span className="flex items-center gap-1">
+              <Clock className="h-3.5 w-3.5" />
+              Est. resolution: {estimatedResolutionLabel((complaint as any).estimated_resolution_hours)}
+            </span>
+            <span className="flex items-center gap-1">
+              <RefreshCw className="h-3.5 w-3.5" />
+              Updated {timeAgo(complaint.updated_at)}
+            </span>
+            {assignedAdmin && (
+              <span className="flex items-center gap-1">
+                <User className="h-3.5 w-3.5" />
+                Assigned to: {assignedAdmin}
+              </span>
+            )}
+          </div>
+
           <p className="whitespace-pre-wrap text-sm">{complaint.description}</p>
           {complaint.attachment_url && (
             <AttachmentPreview attachmentUrl={complaint.attachment_url} />
@@ -283,6 +385,27 @@ export default function ComplaintDetail() {
                 {generatingSummary ? "Generating summary..." : "No AI summary yet. Click Generate to create one."}
               </p>
             )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Feedback prompt for students on resolved complaints */}
+      {showFeedback && (
+        <FeedbackPrompt
+          complaintId={complaint.id}
+          existingFeedback={feedback}
+          onFeedbackSubmitted={fetchData}
+        />
+      )}
+
+      {/* Reopen button */}
+      {canReopen && (
+        <Card>
+          <CardContent className="flex items-center justify-between p-4">
+            <p className="text-sm text-muted-foreground">Not satisfied? You can reopen this complaint.</p>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={handleReopen} disabled={transitioning}>
+              <RotateCcw className="h-4 w-4" /> Reopen Complaint
+            </Button>
           </CardContent>
         </Card>
       )}
@@ -337,7 +460,7 @@ export default function ComplaintDetail() {
               <CardContent className="p-4">
                 <div className="mb-1 flex items-center justify-between text-sm">
                   <span className="font-medium">{r.profiles?.display_name || "Unknown"}</span>
-                  <span className="text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span>
+                  <span className="text-muted-foreground">{timeAgo(r.created_at)}</span>
                 </div>
                 <p className="whitespace-pre-wrap text-sm">{r.message}</p>
               </CardContent>

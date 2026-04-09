@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ComplaintListSkeleton } from "@/components/ui/skeleton-card";
-import { PlusCircle, Eye, Paperclip } from "lucide-react";
+import { PlusCircle, Eye, Paperclip, BookmarkCheck, Clock } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import { timeAgo, estimatedResolutionLabel } from "@/lib/timeUtils";
 
 const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
   pending: { label: "Pending", variant: "destructive" },
@@ -33,20 +34,25 @@ const categoryLabels: Record<string, string> = {
 export default function StudentDashboard() {
   const { user } = useAuth();
   const [complaints, setComplaints] = useState<Tables<"complaints">[]>([]);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"all" | "bookmarked">("all");
 
   useEffect(() => {
     if (!user) return;
-    supabase
-      .from("complaints")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setComplaints(data || []);
-        setLoading(false);
-      });
+    Promise.all([
+      supabase.from("complaints").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("complaint_bookmarks").select("complaint_id").eq("user_id", user.id),
+    ]).then(([{ data: comp }, { data: bm }]) => {
+      setComplaints(comp || []);
+      setBookmarkedIds(new Set((bm || []).map((b) => b.complaint_id)));
+      setLoading(false);
+    });
   }, [user]);
+
+  const displayed = filter === "bookmarked" 
+    ? complaints.filter((c) => bookmarkedIds.has(c.id))
+    : complaints;
 
   if (loading) {
     return (
@@ -77,53 +83,90 @@ export default function StudentDashboard() {
         </Link>
       </div>
 
-      {complaints.length === 0 ? (
+      {/* Filter tabs */}
+      {bookmarkedIds.size > 0 && (
+        <div className="flex items-center gap-2">
+          <Button variant={filter === "all" ? "default" : "outline"} size="sm" onClick={() => setFilter("all")}>
+            All ({complaints.length})
+          </Button>
+          <Button variant={filter === "bookmarked" ? "default" : "outline"} size="sm" className="gap-1" onClick={() => setFilter("bookmarked")}>
+            <BookmarkCheck className="h-3.5 w-3.5" /> Bookmarked ({bookmarkedIds.size})
+          </Button>
+        </div>
+      )}
+
+      {displayed.length === 0 ? (
         <Card className="border-dashed animate-fade-in">
           <CardContent className="py-16 text-center">
             <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
               <PlusCircle className="h-8 w-8 text-muted-foreground" />
             </div>
-            <h3 className="font-semibold text-lg mb-2">No complaints yet</h3>
-            <p className="text-muted-foreground mb-6">You haven't submitted any complaints yet. Start by submitting your first complaint.</p>
-            <Link to="/submit">
-              <Button variant="outline" className="hover:scale-105 transition-transform duration-200">
-                Submit your first complaint
-              </Button>
-            </Link>
+            <h3 className="font-semibold text-lg mb-2">
+              {filter === "bookmarked" ? "No bookmarked complaints" : "No complaints yet"}
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              {filter === "bookmarked" 
+                ? "Bookmark complaints from their detail page to see them here."
+                : "You haven't submitted any complaints yet. Start by submitting your first complaint."}
+            </p>
+            {filter !== "bookmarked" && (
+              <Link to="/submit">
+                <Button variant="outline" className="hover:scale-105 transition-transform duration-200">
+                  Submit your first complaint
+                </Button>
+              </Link>
+            )}
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3">
-          {complaints.map((c, index) => (
-            <Link key={c.id} to={`/complaint/${c.id}`} className="block">
-              <Card className={`group transition-all duration-200 hover:shadow-md hover:scale-[1.01] border hover:border-primary/20 animate-fade-in`} style={{ animationDelay: `${index * 100}ms` }}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-foreground group-hover:text-primary transition-colors">{c.subject}</p>
-                      {c.attachment_url && <Paperclip className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary/70 transition-colors" />}
+          {displayed.map((c, index) => {
+            const hasUpdates = (c as any).has_new_updates;
+            const estHours = (c as any).estimated_resolution_hours;
+            return (
+              <Link key={c.id} to={`/complaint/${c.id}`} className="block">
+                <Card className={`group transition-all duration-200 hover:shadow-md hover:scale-[1.01] border hover:border-primary/20 animate-fade-in ${hasUpdates ? "border-l-2 border-l-primary" : ""}`} style={{ animationDelay: `${index * 100}ms` }}>
+                  <CardContent className="flex items-center justify-between p-4">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-2">
+                        {hasUpdates && (
+                          <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                        )}
+                        <p className="font-medium text-foreground group-hover:text-primary transition-colors">{c.subject}</p>
+                        {c.attachment_url && <Paperclip className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary/70 transition-colors" />}
+                        {bookmarkedIds.has(c.id) && <BookmarkCheck className="h-3.5 w-3.5 text-primary" />}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="font-mono text-xs bg-muted px-2 py-1 rounded">{c.reference_id}</span>
+                        <span>·</span>
+                        <span>{categoryLabels[c.category]}</span>
+                        <span>·</span>
+                        <span>{timeAgo(c.updated_at)}</span>
+                        {estHours && c.status !== "closed" && c.status !== "resolved" && (
+                          <>
+                            <span>·</span>
+                            <span className="flex items-center gap-0.5">
+                              <Clock className="h-3 w-3" />
+                              {estimatedResolutionLabel(estHours)}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span className="font-mono text-xs bg-muted px-2 py-1 rounded">{c.reference_id}</span>
-                      <span>·</span>
-                      <span>{categoryLabels[c.category]}</span>
-                      <span>·</span>
-                      <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                    <div className="flex items-center gap-2 ml-4">
+                      <Badge variant={priorityConfig[c.priority]?.variant || "outline"} className="transition-transform group-hover:scale-105">
+                        {priorityConfig[c.priority]?.label || c.priority}
+                      </Badge>
+                      <Badge variant={statusConfig[c.status].variant} className="transition-transform group-hover:scale-105">
+                        {statusConfig[c.status].label}
+                      </Badge>
+                      <Eye className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <Badge variant={priorityConfig[c.priority]?.variant || "outline"} className="transition-transform group-hover:scale-105">
-                      {priorityConfig[c.priority]?.label || c.priority}
-                    </Badge>
-                    <Badge variant={statusConfig[c.status].variant} className="transition-transform group-hover:scale-105">
-                      {statusConfig[c.status].label}
-                    </Badge>
-                    <Eye className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
         </div>
       )}
 

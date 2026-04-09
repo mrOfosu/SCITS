@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Paperclip, X, Bot } from "lucide-react";
+import { Paperclip, X, Bot, AlertTriangle } from "lucide-react";
 import KwameFormAssistant from "@/components/kwame/KwameFormAssistant";
+import SuccessAnimation from "@/components/SuccessAnimation";
 import type { Database } from "@/integrations/supabase/types";
 
 type Category = Database["public"]["Enums"]["complaint_category"];
@@ -23,6 +24,13 @@ const subCategories: Record<string, string[]> = {
   other: ["General", "Suggestion", "Feedback"],
 };
 
+interface SimilarComplaint {
+  id: string;
+  subject: string;
+  reference_id: string | null;
+  status: string;
+}
+
 export default function SubmitComplaint() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -34,8 +42,36 @@ export default function SubmitComplaint() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [similarComplaints, setSimilarComplaints] = useState<SimilarComplaint[]>([]);
 
   const descriptionError = description.length > 0 && description.length < 20;
+
+  // Duplicate detection: search for similar complaints when subject changes
+  const checkDuplicates = useCallback(async (subjectText: string) => {
+    if (!user || subjectText.length < 5) {
+      setSimilarComplaints([]);
+      return;
+    }
+    const words = subjectText.toLowerCase().split(/\s+/).filter(w => w.length > 3).slice(0, 3);
+    if (words.length === 0) { setSimilarComplaints([]); return; }
+    
+    const { data } = await supabase
+      .from("complaints")
+      .select("id, subject, reference_id, status")
+      .eq("user_id", user.id)
+      .or(words.map(w => `subject.ilike.%${w}%`).join(","))
+      .limit(3);
+    
+    setSimilarComplaints((data || []).filter(c => c.subject.toLowerCase() !== subjectText.toLowerCase()));
+  }, [user]);
+
+  const handleSubjectChange = (val: string) => {
+    setSubject(val);
+    // Debounced duplicate check
+    const timer = setTimeout(() => checkDuplicates(val), 500);
+    return () => clearTimeout(timer);
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -90,21 +126,19 @@ export default function SubmitComplaint() {
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: "Complaint submitted", description: "Your complaint has been recorded." });
+      // Show success animation
+      setShowSuccess(true);
       if (inserted?.id) {
-        // Generate AI summary (fire-and-forget)
         supabase.functions.invoke("generate-ai-summary", {
           body: { complaint_id: inserted.id },
         }).then(({ error: sumErr }) => {
           if (sumErr) console.error("AI summary generation failed:", sumErr);
         });
-        // Notify admins via email (fire-and-forget)
         supabase.functions.invoke("notify-new-complaint", {
           body: { complaint_id: inserted.id },
         }).then(({ error: notifErr }) => {
           if (notifErr) console.error("Admin notification failed:", notifErr);
         });
-        // Auto-assign if enabled (fire-and-forget)
         try {
           const savedPrefs = localStorage.getItem("system-preferences");
           const prefs = savedPrefs ? JSON.parse(savedPrefs) : {};
@@ -116,15 +150,14 @@ export default function SubmitComplaint() {
             });
           }
         } catch {}
-
       }
-      navigate("/");
     }
     setLoading(false);
   };
 
   return (
     <div className="mx-auto max-w-4xl">
+      <SuccessAnimation show={showSuccess} onComplete={() => navigate("/")} />
       <div className={showAssistant ? "grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]" : ""}>
         <Card>
           <CardHeader>
@@ -184,7 +217,24 @@ export default function SubmitComplaint() {
 
               <div className="space-y-2">
                 <Label htmlFor="subject">Subject *</Label>
-                <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Brief summary of your issue" required />
+                <Input id="subject" value={subject} onChange={(e) => handleSubjectChange(e.target.value)} placeholder="Brief summary of your issue" required />
+                {/* Duplicate detection */}
+                {similarComplaints.length > 0 && (
+                  <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
+                    <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300 mb-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Similar complaints found
+                    </div>
+                    <ul className="space-y-1">
+                      {similarComplaints.map((sc) => (
+                        <li key={sc.id} className="text-xs text-amber-700 dark:text-amber-400">
+                          <span className="font-mono">{sc.reference_id}</span> — {sc.subject} ({sc.status})
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">Consider viewing these before submitting a new complaint.</p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -225,10 +275,8 @@ export default function SubmitComplaint() {
           </form>
         </Card>
 
-        {/* Kwame Form Assistant - Side panel on large screens, overlay on small */}
         {showAssistant && (
           <>
-            {/* Large screens: side panel */}
             <div className="hidden lg:block">
               <div className="sticky top-4 h-[calc(100vh-8rem)]">
                 <KwameFormAssistant
@@ -239,7 +287,6 @@ export default function SubmitComplaint() {
                 />
               </div>
             </div>
-            {/* Small screens: floating overlay */}
             <div className="fixed inset-4 z-50 lg:hidden">
               <KwameFormAssistant
                 category={category}
