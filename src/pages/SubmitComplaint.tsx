@@ -271,9 +271,23 @@ export default function SubmitComplaint() {
                 )}
               </div>
 
+              <div className="flex items-center space-x-2 rounded-md border p-3 bg-muted/30">
+                <Checkbox
+                  id="anonymous"
+                  checked={isAnonymous}
+                  onCheckedChange={(checked) => setIsAnonymous(checked === true)}
+                />
+                <div className="space-y-0.5">
+                  <Label htmlFor="anonymous" className="text-sm font-medium cursor-pointer">
+                    Submit anonymously
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Your identity will be hidden from other students. Admins can still see your details for investigation purposes.
+                  </p>
+                </div>
+              </div>
+
               <Button type="submit" className="w-full" disabled={loading || !category || !priority || description.length < 20}>
-@@
-              <Label>Attachment <span className="text-xs text-muted-foreground">(PDF or image, max 5MB)</span></Label>
                 {loading ? "Submitting..." : "Submit Complaint"}
               </Button>
             </CardContent>
