@@ -19,6 +19,34 @@ import type { ActivityEntry } from "@/components/ActivityLog";
 import type { Tables, Database } from "@/integrations/supabase/types";
 import { timeAgo, estimatedResolutionLabel } from "@/lib/timeUtils";
 
+// Inline component: shows full student details for admins
+function StudentDetailCard({ userId, isAnonymous }: { userId: string; isAnonymous: boolean }) {
+  const [profile, setProfile] = useState<{ display_name: string; full_name: string | null; student_id: string | null; email: string | null; department: string | null; level: string | null; phone_number: string | null } | null>(null);
+
+  useEffect(() => {
+    supabase.from("profiles").select("display_name, full_name, student_id, email, department, level, phone_number").eq("id", userId).maybeSingle().then(({ data }) => setProfile(data));
+  }, [userId]);
+
+  if (!profile) return null;
+
+  return (
+    <div className="rounded-md border bg-muted/30 p-3 space-y-1">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Student Details</h4>
+        {isAnonymous && <Badge variant="outline" className="text-[10px]">Anonymous Submission</Badge>}
+      </div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+        <div><span className="text-muted-foreground">Name:</span> {profile.full_name || profile.display_name}</div>
+        <div><span className="text-muted-foreground">Student ID:</span> {profile.student_id || "—"}</div>
+        <div><span className="text-muted-foreground">Email:</span> {profile.email || "—"}</div>
+        <div><span className="text-muted-foreground">Department:</span> {profile.department || "—"}</div>
+        <div><span className="text-muted-foreground">Level:</span> {profile.level || "—"}</div>
+        <div><span className="text-muted-foreground">Phone:</span> {profile.phone_number || "—"}</div>
+      </div>
+    </div>
+  );
+}
+
 type ComplaintStatus = Database["public"]["Enums"]["complaint_status"];
 
 interface ResponseWithProfile {
