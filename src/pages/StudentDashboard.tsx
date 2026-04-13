@@ -121,8 +121,8 @@ export default function StudentDashboard() {
       ) : (
         <div className="space-y-3">
           {displayed.map((c, index) => {
-            const hasUpdates = (c as any).has_new_updates;
-            const estHours = (c as any).estimated_resolution_hours;
+            const hasUpdates = c.has_new_updates;
+            const estHours = c.estimated_resolution_hours;
             return (
               <Link key={c.id} to={`/complaint/${c.id}`} className="block">
                 <Card className={`group transition-all duration-200 hover:shadow-md hover:scale-[1.01] border hover:border-primary/20 animate-fade-in ${hasUpdates ? "border-l-2 border-l-primary" : ""}`} style={{ animationDelay: `${index * 100}ms` }}>

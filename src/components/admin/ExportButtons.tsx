@@ -62,7 +62,15 @@ async function exportPDF(complaints: ComplaintWithProfile[]) {
     styles: { fontSize: 8 },
     headStyles: { fillColor: [34, 40, 49] },
   });
-  doc.save(`complaints-${new Date().toISOString().slice(0, 10)}.pdf`);
+  const pdfBlob = doc.output("blob");
+  const url = URL.createObjectURL(pdfBlob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `complaints-${new Date().toISOString().slice(0, 10)}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
   toast({ title: "PDF exported" });
 }
 

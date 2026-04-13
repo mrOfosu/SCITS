@@ -9,6 +9,7 @@ import { useProfile } from "@/hooks/useProfile";
 import PageTransition from "./components/PageTransition";
 import { RouteLoader } from "./components/RouteLoader";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import StudentDashboard from "./pages/StudentDashboard";
 import SubmitComplaint from "./pages/SubmitComplaint";
 import ComplaintDetail from "./pages/ComplaintDetail";
@@ -92,6 +93,7 @@ const App = () => {
             <AppPreferences>
               <Routes>
                 <Route path="/auth" element={<AuthRoute />} />
+                <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
                 <Route path="/complete-profile" element={<CompleteProfileRoute />} />
                 <Route path="/" element={<ProtectedRoute><StudentDashboard /></ProtectedRoute>} />
                 <Route path="/submit" element={<ProtectedRoute><SubmitComplaint /></ProtectedRoute>} />

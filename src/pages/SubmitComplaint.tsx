@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { Paperclip, X, Bot, AlertTriangle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import KwameFormAssistant from "@/components/kwame/KwameFormAssistant";
 import SuccessAnimation from "@/components/SuccessAnimation";
 import type { Database } from "@/integrations/supabase/types";
@@ -44,6 +45,8 @@ export default function SubmitComplaint() {
   const [showAssistant, setShowAssistant] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [similarComplaints, setSimilarComplaints] = useState<SimilarComplaint[]>([]);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+  const duplicateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const descriptionError = description.length > 0 && description.length < 20;
 
@@ -68,9 +71,8 @@ export default function SubmitComplaint() {
 
   const handleSubjectChange = (val: string) => {
     setSubject(val);
-    // Debounced duplicate check
-    const timer = setTimeout(() => checkDuplicates(val), 500);
-    return () => clearTimeout(timer);
+    if (duplicateTimer.current) clearTimeout(duplicateTimer.current);
+    duplicateTimer.current = setTimeout(() => checkDuplicates(val), 500);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -121,6 +123,7 @@ export default function SubmitComplaint() {
       subject,
       description,
       attachment_url,
+      is_anonymous: isAnonymous,
     }).select("id").single();
 
     if (error) {
@@ -266,6 +269,22 @@ export default function SubmitComplaint() {
                 ) : (
                   <Input type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" onChange={handleFileChange} />
                 )}
+              </div>
+
+              <div className="flex items-center space-x-2 rounded-md border p-3 bg-muted/30">
+                <Checkbox
+                  id="anonymous"
+                  checked={isAnonymous}
+                  onCheckedChange={(checked) => setIsAnonymous(checked === true)}
+                />
+                <div className="space-y-0.5">
+                  <Label htmlFor="anonymous" className="text-sm font-medium cursor-pointer">
+                    Submit anonymously
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Your identity will be hidden from other students. Admins can still see your details for investigation purposes.
+                  </p>
+                </div>
               </div>
 
               <Button type="submit" className="w-full" disabled={loading || !category || !priority || description.length < 20}>
