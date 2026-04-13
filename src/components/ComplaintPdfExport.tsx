@@ -11,7 +11,7 @@ interface ComplaintPdfExportProps {
 export default function ComplaintPdfExport({ complaint, responses }: ComplaintPdfExportProps) {
   const exportPdf = async () => {
     const { default: jsPDF } = await import("jspdf");
-    const doc = new jsPDF();
+    const doc = new jsPDF() as any;
     let y = 20;
 
     doc.setFontSize(18);
@@ -55,7 +55,15 @@ export default function ComplaintPdfExport({ complaint, responses }: ComplaintPd
       }
     }
 
-    doc.save(`complaint-${complaint.reference_id || complaint.id.slice(0, 8)}.pdf`);
+    const pdfBlob = doc.output("blob");
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `complaint-${complaint.reference_id || complaint.id.slice(0, 8)}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
     toast({ title: "PDF downloaded" });
   };
 
