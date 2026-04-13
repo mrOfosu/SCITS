@@ -165,6 +165,7 @@ export type Database = {
           estimated_resolution_hours: number | null
           has_new_updates: boolean
           id: string
+          is_anonymous: boolean
           priority: Database["public"]["Enums"]["complaint_priority"]
           reference_id: string | null
           status: Database["public"]["Enums"]["complaint_status"]
@@ -183,6 +184,7 @@ export type Database = {
           estimated_resolution_hours?: number | null
           has_new_updates?: boolean
           id?: string
+          is_anonymous?: boolean
           priority?: Database["public"]["Enums"]["complaint_priority"]
           reference_id?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
@@ -201,6 +203,7 @@ export type Database = {
           estimated_resolution_hours?: number | null
           has_new_updates?: boolean
           id?: string
+          is_anonymous?: boolean
           priority?: Database["public"]["Enums"]["complaint_priority"]
           reference_id?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
