@@ -86,16 +86,16 @@ export default function ComplaintDetail() {
     setComplaint(comp);
 
     // Clear new updates flag for student
-    if (comp && !isAdmin && (comp as any).has_new_updates) {
-      supabase.from("complaints").update({ has_new_updates: false } as any).eq("id", id).then(() => {});
+    if (comp && !isAdmin && comp.has_new_updates) {
+      supabase.from("complaints").update({ has_new_updates: false }).eq("id", id).then(() => {});
     }
 
     // Fetch assigned admin name
-    if (comp && (comp as any).assigned_admin_id) {
+    if (comp && comp.assigned_admin_id) {
       const { data: adminProfile } = await supabase
         .from("profiles")
         .select("display_name")
-        .eq("id", (comp as any).assigned_admin_id)
+        .eq("id", comp.assigned_admin_id)
         .maybeSingle();
       setAssignedAdmin(adminProfile?.display_name || null);
     }
@@ -170,8 +170,8 @@ export default function ComplaintDetail() {
 
   useEffect(() => {
     if (!isAdmin || !complaint) return;
-    if ((complaint as any).ai_summary) {
-      setAiSummary((complaint as any).ai_summary);
+    if (complaint.ai_summary) {
+      setAiSummary(complaint.ai_summary);
     }
   }, [complaint, isAdmin]);
 
@@ -332,11 +332,22 @@ export default function ComplaintDetail() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Admin: full student details */}
+          {isAdmin && <StudentDetailCard userId={complaint.user_id} isAnonymous={complaint.is_anonymous} />}
+
+          {/* Anonymous badge for students */}
+          {!isAdmin && complaint.is_anonymous && (
+            <div className="flex items-center gap-2 rounded-md border border-muted bg-muted/40 p-2 text-xs text-muted-foreground">
+              <User className="h-3.5 w-3.5" />
+              This complaint was submitted anonymously
+            </div>
+          )}
+
           {/* Info row: estimated time, last updated, assigned admin */}
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground border-b pb-3">
             <span className="flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
-              Est. resolution: {estimatedResolutionLabel((complaint as any).estimated_resolution_hours)}
+              Est. resolution: {estimatedResolutionLabel(complaint.estimated_resolution_hours)}
             </span>
             <span className="flex items-center gap-1">
               <RefreshCw className="h-3.5 w-3.5" />
