@@ -133,15 +133,11 @@ export default function SubmitComplaint() {
       // Show success animation
       setShowSuccess(true);
       if (inserted?.id) {
+        // Generate AI summary (notifications are handled by DB triggers)
         supabase.functions.invoke("generate-ai-summary", {
           body: { complaint_id: inserted.id },
         }).then(({ error: sumErr }) => {
           if (sumErr) console.error("AI summary generation failed:", sumErr);
-        });
-        supabase.functions.invoke("notify-new-complaint", {
-          body: { complaint_id: inserted.id },
-        }).then(({ error: notifErr }) => {
-          if (notifErr) console.error("Admin notification failed:", notifErr);
         });
         try {
           const savedPrefs = localStorage.getItem("system-preferences");

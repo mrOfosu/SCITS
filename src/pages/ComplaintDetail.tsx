@@ -234,11 +234,6 @@ export default function ComplaintDetail() {
       toast({ title: "Invalid transition", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Status updated", description: `Moved to ${statusConfig[nextStatus]?.label}` });
-      supabase.functions.invoke("notify-status-change", {
-        body: { complaint_id: id, old_status: oldStatus, new_status: nextStatus },
-      }).then(({ error: notifErr }) => {
-        if (notifErr) console.error("Status notification failed:", notifErr);
-      });
       fetchData();
     }
     setTransitioning(false);
