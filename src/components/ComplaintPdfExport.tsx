@@ -10,14 +10,73 @@ interface ComplaintPdfExportProps {
   responses: { message: string; created_at: string; profiles: { display_name: string } | null }[];
 }
 
+type SaveFilePickerWindow = Window & {
+  showSaveFilePicker?: (options?: {
+    suggestedName?: string;
+    types?: Array<{
+      description: string;
+      accept: Record<string, string[]>;
+    }>;
+  }) => Promise<{
+    createWritable: () => Promise<{
+      write: (data: Blob) => Promise<void>;
+      close: () => Promise<void>;
+    }>;
+  }>;
+};
+
+const pdfSafeText = (value: string) =>
+  value
+    .replace(/[–—]/g, "-")
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/[…]/g, "...")
+    .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, "?");
+
+const triggerBlobDownload = (blob: Blob, filename: string) => {
+  const blobUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = filename;
+  link.rel = "noopener";
+  link.style.display = "none";
+  document.body.appendChild(link);
+  link.dispatchEvent(
+    new MouseEvent("click", {
+      bubbles: true,
+      cancelable: true,
+      view: window,
+    })
+  );
+
+  window.setTimeout(() => {
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  }, 60_000);
+
+  return blobUrl;
+};
+
 export default function ComplaintPdfExport({ complaint, responses }: ComplaintPdfExportProps) {
   const [exporting, setExporting] = useState(false);
 
-  const exportPdf = () => {
+  const exportPdf = async () => {
+    setExporting(true);
+
     try {
-      setExporting(true);
-      const doc = new jsPDF();
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
       let y = 20;
+
+      const writeBlock = (label: string, value: string, fontSize = 10) => {
+        doc.setFontSize(fontSize);
+        const lines = doc.splitTextToSize(`${label}: ${pdfSafeText(value)}`, 180);
+        if (y + lines.length * 5 > 280) {
+          doc.addPage();
+          y = 20;
+        }
+        doc.text(lines, 14, y);
+        y += lines.length * 5 + 2;
+      };
 
       doc.setFontSize(18);
       doc.text("Complaint Report", 14, y);
@@ -29,43 +88,98 @@ export default function ComplaintPdfExport({ complaint, responses }: ComplaintPd
       y += 12;
 
       doc.setTextColor(0);
-      doc.setFontSize(12);
-      doc.text(`Reference: ${complaint.reference_id || "N/A"}`, 14, y); y += 7;
-      doc.text(`Subject: ${complaint.subject}`, 14, y); y += 7;
-      doc.text(`Category: ${complaint.category}`, 14, y); y += 7;
-      doc.text(`Priority: ${complaint.priority}`, 14, y); y += 7;
-      doc.text(`Status: ${complaint.status}`, 14, y); y += 7;
-      doc.text(`Created: ${new Date(complaint.created_at).toLocaleString()}`, 14, y); y += 10;
+      writeBlock("Reference", complaint.reference_id || "N/A", 12);
+      writeBlock("Subject", complaint.subject, 12);
+      writeBlock("Category", complaint.category, 12);
+      writeBlock("Priority", complaint.priority, 12);
+      writeBlock("Status", complaint.status, 12);
+      writeBlock("Created", new Date(complaint.created_at).toLocaleString(), 12);
 
+      y += 4;
       doc.setFontSize(11);
-      doc.text("Description:", 14, y); y += 6;
+      doc.text("Description:", 14, y);
+      y += 6;
       doc.setFontSize(10);
-      const descLines = doc.splitTextToSize(complaint.description, 180);
-      doc.text(descLines, 14, y);
-      y += descLines.length * 5 + 8;
+      const descriptionLines = doc.splitTextToSize(pdfSafeText(complaint.description), 180);
+      if (y + descriptionLines.length * 5 > 280) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.text(descriptionLines, 14, y);
+      y += descriptionLines.length * 5 + 8;
 
       if (responses.length > 0) {
+        if (y > 260) {
+          doc.addPage();
+          y = 20;
+        }
         doc.setFontSize(11);
-        doc.text("Responses:", 14, y); y += 6;
+        doc.text("Responses:", 14, y);
+        y += 6;
         doc.setFontSize(9);
-        for (const r of responses) {
-          if (y > 270) { doc.addPage(); y = 20; }
+
+        for (const response of responses) {
+          const author = response.profiles?.display_name || "Unknown";
+          const header = pdfSafeText(`${author} - ${new Date(response.created_at).toLocaleString()}`);
+          const messageLines = doc.splitTextToSize(pdfSafeText(response.message), 180);
+          const requiredHeight = 5 + messageLines.length * 4.5 + 6;
+
+          if (y + requiredHeight > 280) {
+            doc.addPage();
+            y = 20;
+          }
+
           doc.setTextColor(60);
-          doc.text(`${r.profiles?.display_name || "Unknown"} — ${new Date(r.created_at).toLocaleString()}`, 14, y);
+          doc.text(header, 14, y);
           y += 5;
           doc.setTextColor(0);
-          const msgLines = doc.splitTextToSize(r.message, 180);
-          doc.text(msgLines, 14, y);
-          y += msgLines.length * 4.5 + 6;
+          doc.text(messageLines, 14, y);
+          y += messageLines.length * 4.5 + 6;
         }
       }
 
+      const pdfBlob = doc.output("blob");
       const filename = `complaint-${complaint.reference_id || complaint.id.slice(0, 8)}.pdf`;
-      doc.save(filename);
-      toast({ title: "PDF downloaded" });
+      const pickerWindow = window as SaveFilePickerWindow;
+
+      if (typeof pickerWindow.showSaveFilePicker === "function") {
+        const handle = await pickerWindow.showSaveFilePicker({
+          suggestedName: filename,
+          types: [
+            {
+              description: "PDF Document",
+              accept: {
+                "application/pdf": [".pdf"],
+              },
+            },
+          ],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(pdfBlob);
+        await writable.close();
+        toast({ title: "PDF saved" });
+        return;
+      }
+
+      const blobUrl = triggerBlobDownload(pdfBlob, filename);
+
+      if (window.self !== window.top) {
+        window.open(blobUrl, "_blank", "noopener,noreferrer");
+      }
+
+      toast({
+        title: "PDF ready",
+        description: window.self !== window.top
+          ? "A new tab was opened as a fallback in preview mode."
+          : "Your PDF download has started.",
+      });
     } catch (err) {
       console.error("PDF export error:", err);
-      toast({ title: "PDF export failed", description: "Please try again.", variant: "destructive" });
+      toast({
+        title: "PDF export failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setExporting(false);
     }
