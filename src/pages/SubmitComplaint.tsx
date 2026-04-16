@@ -103,7 +103,8 @@ export default function SubmitComplaint() {
 
     if (file) {
       const ext = file.name.split(".").pop();
-      const path = `${user.id}/${Date.now()}.${ext}`;
+      const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      const path = `${user.id}/${uniqueId}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from("complaint-attachments")
         .upload(path, file);
