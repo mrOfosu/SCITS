@@ -16,10 +16,10 @@ export type Message = {
 type Corner = "bottom-right" | "bottom-left" | "top-right" | "top-left";
 
 const CORNER_CLASSES: Record<Corner, string> = {
-  "bottom-right": "bottom-6 right-6",
-  "bottom-left": "bottom-6 left-6",
-  "top-right": "top-6 right-6",
-  "top-left": "top-6 left-6",
+  "bottom-right": "bottom-4 right-4 sm:bottom-6 sm:right-6",
+  "bottom-left": "bottom-4 left-4 sm:bottom-6 sm:left-6",
+  "top-right": "top-20 right-4 sm:top-6 sm:right-6",
+  "top-left": "top-20 left-4 sm:top-6 sm:left-6",
 };
 
 const STORAGE_KEY_CORNER = "kwame-fab-corner";

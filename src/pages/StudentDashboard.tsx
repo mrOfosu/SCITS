@@ -70,14 +70,14 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground">My Complaints</h1>
-          <p className="text-muted-foreground">Track and manage your submitted complaints</p>
+    <div className="space-y-5 sm:space-y-6 animate-fade-in pb-24 sm:pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="space-y-1 min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">My Complaints</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Track and manage your submitted complaints</p>
         </div>
-        <Link to="/submit">
-          <Button className="gap-1.5 hover:scale-105 transition-transform duration-200 shadow-sm hover:shadow-md">
+        <Link to="/submit" className="w-full sm:w-auto">
+          <Button className="w-full sm:w-auto h-11 sm:h-10 gap-1.5 hover:scale-[1.02] transition-transform duration-200 shadow-sm hover:shadow-md">
             <PlusCircle className="h-4 w-4" /> New Complaint
           </Button>
         </Link>
@@ -85,11 +85,11 @@ export default function StudentDashboard() {
 
       {/* Filter tabs */}
       {bookmarkedIds.size > 0 && (
-        <div className="flex items-center gap-2">
-          <Button variant={filter === "all" ? "default" : "outline"} size="sm" onClick={() => setFilter("all")}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant={filter === "all" ? "default" : "outline"} size="sm" className="h-9" onClick={() => setFilter("all")}>
             All ({complaints.length})
           </Button>
-          <Button variant={filter === "bookmarked" ? "default" : "outline"} size="sm" className="gap-1" onClick={() => setFilter("bookmarked")}>
+          <Button variant={filter === "bookmarked" ? "default" : "outline"} size="sm" className="h-9 gap-1" onClick={() => setFilter("bookmarked")}>
             <BookmarkCheck className="h-3.5 w-3.5" /> Bookmarked ({bookmarkedIds.size})
           </Button>
         </div>
@@ -125,20 +125,22 @@ export default function StudentDashboard() {
             const estHours = c.estimated_resolution_hours;
             return (
               <Link key={c.id} to={`/complaint/${c.id}`} className="block">
-                <Card className={`group transition-all duration-200 hover:shadow-md hover:scale-[1.01] border hover:border-primary/20 animate-fade-in ${hasUpdates ? "border-l-2 border-l-primary" : ""}`} style={{ animationDelay: `${index * 100}ms` }}>
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex items-center gap-2">
+                <Card className={`group transition-all duration-200 hover:shadow-md sm:hover:scale-[1.01] border hover:border-primary/20 animate-fade-in ${hasUpdates ? "border-l-2 border-l-primary" : ""}`} style={{ animationDelay: `${index * 100}ms` }}>
+                  <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4">
+                    <div className="space-y-2 flex-1 min-w-0">
+                      <div className="flex items-start gap-2">
                         {hasUpdates && (
-                          <span className="h-2 w-2 rounded-full bg-primary shrink-0" />
+                          <span className="h-2 w-2 mt-1.5 rounded-full bg-primary shrink-0" />
                         )}
-                        <p className="font-medium text-foreground group-hover:text-primary transition-colors">{c.subject}</p>
-                        {c.attachment_url && <Paperclip className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary/70 transition-colors" />}
-                        {bookmarkedIds.has(c.id) && <BookmarkCheck className="h-3.5 w-3.5 text-primary" />}
+                        <p className="font-medium text-foreground group-hover:text-primary transition-colors break-words flex-1 min-w-0">{c.subject}</p>
+                        <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                          {c.attachment_url && <Paperclip className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary/70 transition-colors" />}
+                          {bookmarkedIds.has(c.id) && <BookmarkCheck className="h-3.5 w-3.5 text-primary" />}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <span className="font-mono text-xs bg-muted px-2 py-1 rounded">{c.reference_id}</span>
-                        <span>·</span>
+                      <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground flex-wrap">
+                        <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{c.reference_id}</span>
+                        <span className="hidden sm:inline">·</span>
                         <span>{categoryLabels[c.category]}</span>
                         <span>·</span>
                         <span>{timeAgo(c.updated_at)}</span>
@@ -153,14 +155,14 @@ export default function StudentDashboard() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 ml-4">
+                    <div className="flex items-center gap-2 sm:ml-4 flex-wrap">
                       <Badge variant={priorityConfig[c.priority]?.variant || "outline"} className="transition-transform group-hover:scale-105">
                         {priorityConfig[c.priority]?.label || c.priority}
                       </Badge>
                       <Badge variant={statusConfig[c.status].variant} className="transition-transform group-hover:scale-105">
                         {statusConfig[c.status].label}
                       </Badge>
-                      <Eye className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <Eye className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors hidden sm:block ml-auto" />
                     </div>
                   </CardContent>
                 </Card>
