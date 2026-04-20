@@ -89,10 +89,10 @@ export default function AdminDashboard() {
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of complaint analytics and trends</p>
+        <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Overview of complaint analytics and trends</p>
       </div>
 
       <StatsCards counts={counts} avgResolutionDays={avgResolutionDays} />
@@ -123,25 +123,25 @@ export default function AdminDashboard() {
                 <Link
                   key={c.id}
                   to={`/admin/complaint/${c.id}`}
-                  className={`flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-muted/50 ${isOverdue ? "border-l-2 border-l-destructive bg-destructive/5" : ""}`}
+                  className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border p-3 transition-colors hover:bg-muted/50 ${isOverdue ? "border-l-2 border-l-destructive bg-destructive/5" : ""}`}
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-muted-foreground">{c.reference_id || "—"}</span>
-                      <span className="text-sm font-medium truncate">{c.subject}</span>
+                    <div className="flex items-start sm:items-center gap-2 flex-wrap">
+                      <span className="font-mono text-xs text-muted-foreground shrink-0">{c.reference_id || "—"}</span>
+                      <span className="text-sm font-medium break-words flex-1 min-w-0">{c.subject}</span>
                       {isOverdue && (
-                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Overdue</Badge>
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">Overdue</Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                      <span>{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</span>
+                    <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground flex-wrap">
+                      <span className="truncate max-w-[140px] sm:max-w-none">{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</span>
                       <span>·</span>
                       <span>{categoryLabels[c.category] || c.category}</span>
                       <span>·</span>
                       <span>{new Date(c.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
-                  <Badge variant={statusConfig[c.status]?.variant || "outline"} className="shrink-0 ml-2">
+                  <Badge variant={statusConfig[c.status]?.variant || "outline"} className="shrink-0 self-start sm:self-center sm:ml-2">
                     {statusConfig[c.status]?.label || c.status}
                   </Badge>
                 </Link>
@@ -158,19 +158,19 @@ export default function AdminDashboard() {
           <CardTitle className="text-base">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-3">
-            <Link to="/admin/complaints">
-              <Button variant="outline" className="gap-2">
+          <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2 sm:gap-3">
+            <Link to="/admin/complaints" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto h-11 sm:h-10 gap-2">
                 <FileText className="h-4 w-4" /> View Complaints
               </Button>
             </Link>
-            <Link to="/admin/reports">
-              <Button variant="outline" className="gap-2">
+            <Link to="/admin/reports" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto h-11 sm:h-10 gap-2">
                 <Download className="h-4 w-4" /> Export Reports
               </Button>
             </Link>
-            <Link to="/admin/notifications">
-              <Button variant="outline" className="gap-2">
+            <Link to="/admin/notifications" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto h-11 sm:h-10 gap-2">
                 <Bell className="h-4 w-4" /> View Notifications
               </Button>
             </Link>

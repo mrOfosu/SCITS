@@ -72,7 +72,7 @@ export default function AdminCharts({ complaints }: AdminChartsProps) {
   const byMonth = groupByMonth(complaints);
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
       {/* By Category */}
       <Card>
         <CardHeader className="pb-2"><CardTitle className="text-base">By Category</CardTitle></CardHeader>

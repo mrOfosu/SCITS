@@ -18,14 +18,14 @@ export default function StatsCards({ counts, avgResolutionDays }: StatsCardsProp
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
       {stats.map((s) => (
         <Card key={s.label}>
-          <CardContent className="flex items-center gap-3 p-4">
-            <s.icon className={`h-7 w-7 shrink-0 ${s.color}`} />
+          <CardContent className="flex items-center gap-2.5 sm:gap-3 p-3 sm:p-4">
+            <s.icon className={`h-6 w-6 sm:h-7 sm:w-7 shrink-0 ${s.color}`} />
             <div className="min-w-0">
-              <p className="text-xl font-bold truncate">{s.value}</p>
-              <p className="text-xs text-muted-foreground truncate">{s.label}</p>
+              <p className="text-lg sm:text-xl font-bold truncate">{s.value}</p>
+              <p className="text-[11px] sm:text-xs text-muted-foreground truncate">{s.label}</p>
             </div>
           </CardContent>
         </Card>
