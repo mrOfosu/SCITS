@@ -179,8 +179,9 @@ export default function ComplaintPdfExport({ complaint, responses }: ComplaintPd
       const pdfBlob = doc.output("blob");
       const filename = `complaint-${complaint.reference_id || complaint.id.slice(0, 8)}.pdf`;
       const pickerWindow = window as SaveFilePickerWindow;
+      const inIframe = window.self !== window.top;
 
-      if (typeof pickerWindow.showSaveFilePicker === "function") {
+      if (!inIframe && typeof pickerWindow.showSaveFilePicker === "function") {
         const handle = await pickerWindow.showSaveFilePicker({
           suggestedName: filename,
           types: [
