@@ -57,10 +57,48 @@ const triggerBlobDownload = (blob: Blob, filename: string) => {
   return blobUrl;
 };
 
+const triggerTopLevelDownload = (targetWindow: Window, blob: Blob, filename: string) => {
+  const blobUrl = URL.createObjectURL(blob);
+  const doc = targetWindow.document;
+
+  doc.open();
+  doc.write(`<!doctype html><html><head><title>Preparing PDF</title></head><body style="font-family: Arial, sans-serif; padding: 24px;"><p>Preparing your PDF download...</p></body></html>`);
+  doc.close();
+
+  const link = doc.createElement("a");
+  link.href = blobUrl;
+  link.download = filename;
+  link.textContent = "Download PDF";
+  link.style.display = "none";
+  doc.body.appendChild(link);
+  targetWindow.focus();
+  link.click();
+
+  const fallbackText = doc.createElement("p");
+  fallbackText.textContent = "If the download does not start automatically, use the link below.";
+  fallbackText.style.marginBottom = "12px";
+  doc.body.appendChild(fallbackText);
+
+  const visibleLink = doc.createElement("a");
+  visibleLink.href = blobUrl;
+  visibleLink.download = filename;
+  visibleLink.textContent = `Download ${filename}`;
+  visibleLink.style.color = "inherit";
+  doc.body.appendChild(visibleLink);
+
+  window.setTimeout(() => {
+    URL.revokeObjectURL(blobUrl);
+    if (!targetWindow.closed) {
+      targetWindow.close();
+    }
+  }, 60_000);
+};
+
 export default function ComplaintPdfExport({ complaint, responses }: ComplaintPdfExportProps) {
   const [exporting, setExporting] = useState(false);
 
   const exportPdf = async () => {
+    const previewDownloadWindow = window.self !== window.top ? window.open("", "_blank") : null;
     setExporting(true);
 
     try {
@@ -157,23 +195,25 @@ export default function ComplaintPdfExport({ complaint, responses }: ComplaintPd
         const writable = await handle.createWritable();
         await writable.write(pdfBlob);
         await writable.close();
+        previewDownloadWindow?.close();
         toast({ title: "PDF saved" });
         return;
       }
 
-      const blobUrl = triggerBlobDownload(pdfBlob, filename);
-
-      if (window.self !== window.top) {
-        window.open(blobUrl, "_blank", "noopener,noreferrer");
+      if (previewDownloadWindow && !previewDownloadWindow.closed) {
+        triggerTopLevelDownload(previewDownloadWindow, pdfBlob, filename);
+      } else {
+        triggerBlobDownload(pdfBlob, filename);
       }
 
       toast({
         title: "PDF ready",
-        description: window.self !== window.top
-          ? "A new tab was opened as a fallback in preview mode."
+        description: previewDownloadWindow
+          ? "Your PDF download is being handled in a new tab."
           : "Your PDF download has started.",
       });
     } catch (err) {
+      previewDownloadWindow?.close();
       console.error("PDF export error:", err);
       toast({
         title: "PDF export failed",
@@ -186,7 +226,7 @@ export default function ComplaintPdfExport({ complaint, responses }: ComplaintPd
   };
 
   return (
-    <Button variant="outline" size="sm" className="gap-1.5" onClick={exportPdf} disabled={exporting}>
+    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={exportPdf} disabled={exporting}>
       {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
       Export PDF
     </Button>
