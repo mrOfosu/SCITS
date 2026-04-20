@@ -20,7 +20,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <SidebarTrigger className="hover:scale-110 transition-transform duration-200" />
             <NotificationBell />
           </header>
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-x-hidden">{children}</main>
         </div>
       </div>
     </SidebarProvider>
