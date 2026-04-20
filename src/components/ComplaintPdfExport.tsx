@@ -1,29 +1,16 @@
 import { useState } from "react";
 import { jsPDF } from "jspdf";
 import { Button } from "@/components/ui/button";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Tables } from "@/integrations/supabase/types";
+import { triggerFileDownload } from "@/lib/fileDownload";
 
 interface ComplaintPdfExportProps {
   complaint: Tables<"complaints">;
   responses: { message: string; created_at: string; profiles: { display_name: string } | null }[];
 }
-
-type SaveFilePickerWindow = Window & {
-  showSaveFilePicker?: (options?: {
-    suggestedName?: string;
-    types?: Array<{
-      description: string;
-      accept: Record<string, string[]>;
-    }>;
-  }) => Promise<{
-    createWritable: () => Promise<{
-      write: (data: Blob) => Promise<void>;
-      close: () => Promise<void>;
-    }>;
-  }>;
-};
 
 const pdfSafeText = (value: string) =>
   value
@@ -33,72 +20,11 @@ const pdfSafeText = (value: string) =>
     .replace(/[…]/g, "...")
     .replace(/[^\x09\x0A\x0D\x20-\x7E]/g, "?");
 
-const triggerBlobDownload = (blob: Blob, filename: string) => {
-  const blobUrl = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = blobUrl;
-  link.download = filename;
-  link.rel = "noopener";
-  link.style.display = "none";
-  document.body.appendChild(link);
-  link.dispatchEvent(
-    new MouseEvent("click", {
-      bubbles: true,
-      cancelable: true,
-      view: window,
-    })
-  );
-
-  window.setTimeout(() => {
-    document.body.removeChild(link);
-    URL.revokeObjectURL(blobUrl);
-  }, 60_000);
-
-  return blobUrl;
-};
-
-const triggerTopLevelDownload = (targetWindow: Window, blob: Blob, filename: string) => {
-  const blobUrl = URL.createObjectURL(blob);
-  const doc = targetWindow.document;
-
-  doc.open();
-  doc.write(`<!doctype html><html><head><title>Preparing PDF</title></head><body style="font-family: Arial, sans-serif; padding: 24px;"><p>Preparing your PDF download...</p></body></html>`);
-  doc.close();
-
-  const link = doc.createElement("a");
-  link.href = blobUrl;
-  link.download = filename;
-  link.textContent = "Download PDF";
-  link.style.display = "none";
-  doc.body.appendChild(link);
-  targetWindow.focus();
-  link.click();
-
-  const fallbackText = doc.createElement("p");
-  fallbackText.textContent = "If the download does not start automatically, use the link below.";
-  fallbackText.style.marginBottom = "12px";
-  doc.body.appendChild(fallbackText);
-
-  const visibleLink = doc.createElement("a");
-  visibleLink.href = blobUrl;
-  visibleLink.download = filename;
-  visibleLink.textContent = `Download ${filename}`;
-  visibleLink.style.color = "inherit";
-  doc.body.appendChild(visibleLink);
-
-  window.setTimeout(() => {
-    URL.revokeObjectURL(blobUrl);
-    if (!targetWindow.closed) {
-      targetWindow.close();
-    }
-  }, 60_000);
-};
-
 export default function ComplaintPdfExport({ complaint, responses }: ComplaintPdfExportProps) {
   const [exporting, setExporting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
-  const exportPdf = async () => {
-    const previewDownloadWindow = window.self !== window.top ? window.open("", "_blank") : null;
+  const exportPdf = () => {
     setExporting(true);
 
     try {
@@ -178,43 +104,13 @@ export default function ComplaintPdfExport({ complaint, responses }: ComplaintPd
 
       const pdfBlob = doc.output("blob");
       const filename = `complaint-${complaint.reference_id || complaint.id.slice(0, 8)}.pdf`;
-      const pickerWindow = window as SaveFilePickerWindow;
-      const inIframe = window.self !== window.top;
-
-      if (!inIframe && typeof pickerWindow.showSaveFilePicker === "function") {
-        const handle = await pickerWindow.showSaveFilePicker({
-          suggestedName: filename,
-          types: [
-            {
-              description: "PDF Document",
-              accept: {
-                "application/pdf": [".pdf"],
-              },
-            },
-          ],
-        });
-        const writable = await handle.createWritable();
-        await writable.write(pdfBlob);
-        await writable.close();
-        previewDownloadWindow?.close();
-        toast({ title: "PDF saved" });
-        return;
-      }
-
-      if (previewDownloadWindow && !previewDownloadWindow.closed) {
-        triggerTopLevelDownload(previewDownloadWindow, pdfBlob, filename);
-      } else {
-        triggerBlobDownload(pdfBlob, filename);
-      }
+      triggerFileDownload(pdfBlob, filename);
 
       toast({
-        title: "PDF ready",
-        description: previewDownloadWindow
-          ? "Your PDF download is being handled in a new tab."
-          : "Your PDF download has started.",
+        title: "PDF download started",
+        description: "Your file should appear in your browser downloads.",
       });
     } catch (err) {
-      previewDownloadWindow?.close();
       console.error("PDF export error:", err);
       toast({
         title: "PDF export failed",
@@ -227,9 +123,24 @@ export default function ComplaintPdfExport({ complaint, responses }: ComplaintPd
   };
 
   return (
-    <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={exportPdf} disabled={exporting}>
-      {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-      Export PDF
-    </Button>
+    <>
+      <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setConfirmOpen(true)} disabled={exporting}>
+        {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+        Export PDF
+      </Button>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Download complaint PDF?"
+        description="This will generate the complaint report and start the download on this page."
+        confirmLabel={exporting ? "Preparing..." : "Download PDF"}
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setConfirmOpen(false);
+          exportPdf();
+        }}
+      />
+    </>
   );
 }
