@@ -2,9 +2,11 @@ import { useState } from "react";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { Button } from "@/components/ui/button";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { Download, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { ComplaintWithProfile } from "@/pages/AdminDashboard";
+import { triggerFileDownload } from "@/lib/fileDownload";
 
 interface ExportButtonsProps {
   complaints: ComplaintWithProfile[];
@@ -48,6 +50,7 @@ function exportCSV(complaints: ComplaintWithProfile[]) {
 
 export default function ExportButtons({ complaints }: ExportButtonsProps) {
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const exportPDF = () => {
     const rows = toRows(complaints);
@@ -71,8 +74,9 @@ export default function ExportButtons({ complaints }: ExportButtonsProps) {
         headStyles: { fillColor: [34, 40, 49] },
       });
 
-      doc.save(`complaints-${new Date().toISOString().slice(0, 10)}.pdf`);
-      toast({ title: "PDF exported" });
+      const filename = `complaints-${new Date().toISOString().slice(0, 10)}.pdf`;
+      triggerFileDownload(doc.output("blob"), filename);
+      toast({ title: "PDF download started" });
     } catch (err) {
       console.error("PDF export error:", err);
       toast({ title: "PDF export failed", variant: "destructive" });
@@ -82,13 +86,28 @@ export default function ExportButtons({ complaints }: ExportButtonsProps) {
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <>
+      <div className="flex items-center gap-2">
       <Button variant="outline" size="sm" onClick={() => exportCSV(complaints)}>
         <Download className="h-4 w-4 mr-1" /> CSV
       </Button>
-      <Button variant="outline" size="sm" onClick={exportPDF} disabled={pdfLoading}>
+      <Button variant="outline" size="sm" onClick={() => setConfirmOpen(true)} disabled={pdfLoading}>
         {pdfLoading ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />} PDF
       </Button>
-    </div>
+      </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Download complaints PDF?"
+        description="This will generate the report and start the download on this page."
+        confirmLabel={pdfLoading ? "Preparing..." : "Download PDF"}
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          setConfirmOpen(false);
+          exportPDF();
+        }}
+      />
+    </>
   );
 }
