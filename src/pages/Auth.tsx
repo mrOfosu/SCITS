@@ -62,6 +62,26 @@ export default function Auth() {
     navigate("/");
   };
 
+  const handleMicrosoftSignIn = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "azure",
+      options: {
+        redirectTo: window.location.origin,
+        scopes: "email openid profile",
+      },
+    });
+    if (error) {
+      toast({
+        title: "Microsoft sign-in unavailable",
+        description:
+          "The Microsoft provider isn't configured yet. Please add Azure AD credentials in the backend Auth settings.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
