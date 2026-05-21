@@ -168,6 +168,7 @@ export type Database = {
           is_anonymous: boolean
           priority: Database["public"]["Enums"]["complaint_priority"]
           reference_id: string | null
+          resolved_at: string | null
           status: Database["public"]["Enums"]["complaint_status"]
           sub_category: string | null
           subject: string
@@ -187,6 +188,7 @@ export type Database = {
           is_anonymous?: boolean
           priority?: Database["public"]["Enums"]["complaint_priority"]
           reference_id?: string | null
+          resolved_at?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
           sub_category?: string | null
           subject: string
@@ -206,6 +208,7 @@ export type Database = {
           is_anonymous?: boolean
           priority?: Database["public"]["Enums"]["complaint_priority"]
           reference_id?: string | null
+          resolved_at?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
           sub_category?: string | null
           subject?: string
