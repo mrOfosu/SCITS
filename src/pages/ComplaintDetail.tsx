@@ -302,6 +302,27 @@ export default function ComplaintDetail() {
   const showFeedback = isOwner && complaint.status === "resolved";
   const canReopen = isOwner && complaint.status === "resolved" && feedback === false;
 
+  const resolvedAt = (complaint as unknown as { resolved_at: string | null }).resolved_at;
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const msSinceResolved = resolvedAt ? Date.now() - new Date(resolvedAt).getTime() : 0;
+  const canStudentDelete = isOwner && complaint.status === "resolved" && resolvedAt !== null && msSinceResolved >= weekMs;
+  const daysUntilDeletable = resolvedAt && msSinceResolved < weekMs
+    ? Math.ceil((weekMs - msSinceResolved) / (24 * 60 * 60 * 1000))
+    : 0;
+
+  const handleDelete = async () => {
+    if (!complaint) return;
+    setDeleting(true);
+    const { error } = await supabase.from("complaints").delete().eq("id", complaint.id);
+    if (error) {
+      toast({ title: "Unable to delete", description: error.message, variant: "destructive" });
+      setDeleting(false);
+    } else {
+      toast({ title: "Complaint deleted" });
+      navigate(isAdmin ? "/admin/complaints" : "/");
+    }
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {isAdmin && <AdminBreadcrumb />}
