@@ -104,6 +104,8 @@ export default function ComplaintDetail() {
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [feedback, setFeedback] = useState<boolean | null | undefined>(undefined);
   const [assignedAdmin, setAssignedAdmin] = useState<string | null>(null);
