@@ -467,6 +467,36 @@ export default function ComplaintDetail() {
         </Card>
       )}
 
+      {/* Student delete (available 7 days after resolution) */}
+      {isOwner && complaint.status === "resolved" && (
+        <Card>
+          <CardContent className="flex items-center justify-between p-4">
+            {canStudentDelete ? (
+              <>
+                <p className="text-sm text-muted-foreground">This complaint was resolved over a week ago. You can permanently delete it.</p>
+                <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => setShowDeleteConfirm(true)} disabled={deleting}>
+                  <Trash2 className="h-4 w-4" /> {deleting ? "Deleting..." : "Delete"}
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                You'll be able to delete this complaint in {daysUntilDeletable} day{daysUntilDeletable === 1 ? "" : "s"}.
+              </p>
+            )}
+            <ConfirmDialog
+              open={showDeleteConfirm}
+              onOpenChange={setShowDeleteConfirm}
+              title="Delete Complaint"
+              description="This will permanently remove the complaint and all its responses, activity, and bookmarks. This action cannot be undone."
+              confirmLabel="Delete"
+              onConfirm={() => { setShowDeleteConfirm(false); handleDelete(); }}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+
+
       {/* Admin status workflow */}
       {isAdmin && nextStatus && (
         <Card>
