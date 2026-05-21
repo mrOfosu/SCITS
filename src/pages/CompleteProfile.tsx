@@ -23,7 +23,7 @@ const departments = [
   "Other",
 ];
 
-const levels = ["100", "200", "300", "400", "500", "600", "Postgraduate"];
+const levels = ["100", "200", "300", "400", "Postgraduate"];
 
 export default function CompleteProfile() {
   const { user } = useAuth();
