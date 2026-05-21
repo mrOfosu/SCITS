@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Clock, User, Bookmark, BookmarkCheck, RotateCcw, Download } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Clock, User, Bookmark, BookmarkCheck, RotateCcw, Download, Trash2 } from "lucide-react";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ReactMarkdown from "react-markdown";
 import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb";
