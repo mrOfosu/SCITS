@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Clock, User, Bookmark, BookmarkCheck, RotateCcw, Download } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Clock, User, Bookmark, BookmarkCheck, RotateCcw, Download, Trash2 } from "lucide-react";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ReactMarkdown from "react-markdown";
 import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb";
@@ -104,6 +104,8 @@ export default function ComplaintDetail() {
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [generatingSummary, setGeneratingSummary] = useState(false);
   const [showStatusConfirm, setShowStatusConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [feedback, setFeedback] = useState<boolean | null | undefined>(undefined);
   const [assignedAdmin, setAssignedAdmin] = useState<string | null>(null);
@@ -300,6 +302,27 @@ export default function ComplaintDetail() {
   const showFeedback = isOwner && complaint.status === "resolved";
   const canReopen = isOwner && complaint.status === "resolved" && feedback === false;
 
+  const resolvedAt = (complaint as unknown as { resolved_at: string | null }).resolved_at;
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const msSinceResolved = resolvedAt ? Date.now() - new Date(resolvedAt).getTime() : 0;
+  const canStudentDelete = isOwner && complaint.status === "resolved" && resolvedAt !== null && msSinceResolved >= weekMs;
+  const daysUntilDeletable = resolvedAt && msSinceResolved < weekMs
+    ? Math.ceil((weekMs - msSinceResolved) / (24 * 60 * 60 * 1000))
+    : 0;
+
+  const handleDelete = async () => {
+    if (!complaint) return;
+    setDeleting(true);
+    const { error } = await supabase.from("complaints").delete().eq("id", complaint.id);
+    if (error) {
+      toast({ title: "Unable to delete", description: error.message, variant: "destructive" });
+      setDeleting(false);
+    } else {
+      toast({ title: "Complaint deleted" });
+      navigate(isAdmin ? "/admin/complaints" : "/");
+    }
+  };
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {isAdmin && <AdminBreadcrumb />}
@@ -443,6 +466,36 @@ export default function ComplaintDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* Student delete (available 7 days after resolution) */}
+      {isOwner && complaint.status === "resolved" && (
+        <Card>
+          <CardContent className="flex items-center justify-between p-4">
+            {canStudentDelete ? (
+              <>
+                <p className="text-sm text-muted-foreground">This complaint was resolved over a week ago. You can permanently delete it.</p>
+                <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => setShowDeleteConfirm(true)} disabled={deleting}>
+                  <Trash2 className="h-4 w-4" /> {deleting ? "Deleting..." : "Delete"}
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                You'll be able to delete this complaint in {daysUntilDeletable} day{daysUntilDeletable === 1 ? "" : "s"}.
+              </p>
+            )}
+            <ConfirmDialog
+              open={showDeleteConfirm}
+              onOpenChange={setShowDeleteConfirm}
+              title="Delete Complaint"
+              description="This will permanently remove the complaint and all its responses, activity, and bookmarks. This action cannot be undone."
+              confirmLabel="Delete"
+              onConfirm={() => { setShowDeleteConfirm(false); handleDelete(); }}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+
 
       {/* Admin status workflow */}
       {isAdmin && nextStatus && (
