@@ -1,7 +1,9 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { useReferenceData } from "@/hooks/useReferenceData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,71 +11,73 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Paperclip, X, Bot, AlertTriangle } from "lucide-react";
+import { Paperclip, X, Bot } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import KwameFormAssistant from "@/components/kwame/KwameFormAssistant";
 import SuccessAnimation from "@/components/SuccessAnimation";
 import type { Database } from "@/integrations/supabase/types";
 
-type Category = Database["public"]["Enums"]["complaint_category"];
-type Priority = Database["public"]["Enums"]["complaint_priority"];
+type LegacyCategory = Database["public"]["Enums"]["complaint_category"];
 
-const subCategories: Record<string, string[]> = {
-  academic: ["Grading", "Course Content", "Faculty", "Examination", "Timetable"],
-  infrastructure: ["Hostel", "Classroom", "Laboratory", "Library", "Sports Facility"],
-  administrative: ["Registration", "Fees", "Documentation", "ID Card", "Scholarship"],
-  other: ["General", "Suggestion", "Feedback"],
-};
+const SEMESTERS = ["First Semester", "Second Semester"];
 
-interface SimilarComplaint {
-  id: string;
-  subject: string;
-  reference_id: string | null;
-  status: string;
+function currentAcademicYear() {
+  const now = new Date();
+  const y = now.getFullYear();
+  // GCTU academic year typically starts in September
+  return now.getMonth() >= 8 ? `${y}/${y + 1}` : `${y - 1}/${y}`;
 }
+
+function nextAcademicYear() {
+  const [a, b] = currentAcademicYear().split("/").map(Number);
+  return `${a + 1}/${b + 1}`;
+}
+
+// Map our new main category codes back to the legacy enum so the legacy column stays valid.
+const LEGACY_CATEGORY_MAP: Record<string, LegacyCategory> = {
+  ACADEMIC: "academic",
+  TECHNICAL: "infrastructure",
+  ADMIN: "administrative",
+  FACILITIES: "other",
+};
 
 export default function SubmitComplaint() {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const navigate = useNavigate();
-  const [category, setCategory] = useState<Category | "">("");
-  const [subCategory, setSubCategory] = useState("");
-  const [priority, setPriority] = useState<Priority | "">("");
+  const { faculties, departments, categories, types, loading: refLoading } = useReferenceData();
+
+  const [facultyId, setFacultyId] = useState("");
+  const [departmentId, setDepartmentId] = useState("");
+  const [categoryId, setCategoryId] = useState("");
+  const [typeId, setTypeId] = useState("");
+  const [academicYear, setAcademicYear] = useState(currentAcademicYear());
+  const [semester, setSemester] = useState("First Semester");
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [similarComplaints, setSimilarComplaints] = useState<SimilarComplaint[]>([]);
-  const [isAnonymous, setIsAnonymous] = useState(false);
-  const duplicateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-fill from profile
+  useEffect(() => {
+    if (profile?.faculty_id && !facultyId) setFacultyId(profile.faculty_id as unknown as string);
+    if (profile?.department_id && !departmentId) setDepartmentId(profile.department_id as unknown as string);
+  }, [profile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const facultyDepartments = useMemo(
+    () => departments.filter((d) => d.faculty_id === facultyId),
+    [departments, facultyId]
+  );
+  const categoryTypes = useMemo(
+    () => types.filter((t) => t.category_id === categoryId),
+    [types, categoryId]
+  );
+  const selectedType = useMemo(() => types.find((t) => t.id === typeId), [types, typeId]);
 
   const descriptionError = description.length > 0 && description.length < 20;
-
-  // Duplicate detection: search for similar complaints when subject changes
-  const checkDuplicates = useCallback(async (subjectText: string) => {
-    if (!user || subjectText.length < 5) {
-      setSimilarComplaints([]);
-      return;
-    }
-    const words = subjectText.toLowerCase().split(/\s+/).filter(w => w.length > 3).slice(0, 3);
-    if (words.length === 0) { setSimilarComplaints([]); return; }
-    
-    const { data } = await supabase
-      .from("complaints")
-      .select("id, subject, reference_id, status")
-      .eq("user_id", user.id)
-      .or(words.map(w => `subject.ilike.%${w}%`).join(","))
-      .limit(3);
-    
-    setSimilarComplaints((data || []).filter(c => c.subject.toLowerCase() !== subjectText.toLowerCase()));
-  }, [user]);
-
-  const handleSubjectChange = (val: string) => {
-    setSubject(val);
-    if (duplicateTimer.current) clearTimeout(duplicateTimer.current);
-    duplicateTimer.current = setTimeout(() => checkDuplicates(val), 500);
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0];
@@ -92,7 +96,7 @@ export default function SubmitComplaint() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !category || !priority) return;
+    if (!user || !facultyId || !departmentId || !categoryId || !typeId) return;
     if (description.length < 20) {
       toast({ title: "Description too short", description: "Please provide at least 20 characters.", variant: "destructive" });
       return;
@@ -100,14 +104,11 @@ export default function SubmitComplaint() {
     setLoading(true);
 
     let attachment_url: string | null = null;
-
     if (file) {
       const ext = file.name.split(".").pop();
       const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
       const path = `${user.id}/${uniqueId}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from("complaint-attachments")
-        .upload(path, file);
+      const { error: uploadError } = await supabase.storage.from("complaint-attachments").upload(path, file);
       if (uploadError) {
         toast({ title: "Upload failed", description: uploadError.message, variant: "destructive" });
         setLoading(false);
@@ -116,11 +117,20 @@ export default function SubmitComplaint() {
       attachment_url = path;
     }
 
+    const categoryCode = categories.find((c) => c.id === categoryId)?.code ?? "";
+
     const { data: inserted, error } = await supabase.from("complaints").insert({
       user_id: user.id,
-      category: category as Category,
-      priority: priority as Priority,
-      sub_category: subCategory || null,
+      faculty_id: facultyId,
+      department_id: departmentId,
+      complaint_category_id: categoryId,
+      complaint_type_id: typeId,
+      academic_year: academicYear,
+      semester,
+      // Legacy fields for backwards compatibility
+      category: LEGACY_CATEGORY_MAP[categoryCode] ?? "other",
+      sub_category: selectedType?.name ?? null,
+      priority: selectedType?.default_priority ?? "medium",
       subject,
       description,
       attachment_url,
@@ -129,28 +139,14 @@ export default function SubmitComplaint() {
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      // Show success animation
-      setShowSuccess(true);
-      if (inserted?.id) {
-        // Generate AI summary (notifications are handled by DB triggers)
-        supabase.functions.invoke("generate-ai-summary", {
-          body: { complaint_id: inserted.id },
-        }).then(({ error: sumErr }) => {
-          if (sumErr) console.error("AI summary generation failed:", sumErr);
-        });
-        try {
-          const savedPrefs = localStorage.getItem("system-preferences");
-          const prefs = savedPrefs ? JSON.parse(savedPrefs) : {};
-          if (prefs.autoAssign) {
-            supabase.functions.invoke("auto-assign-complaint", {
-              body: { complaint_id: inserted.id },
-            }).then(({ error: assignErr }) => {
-              if (assignErr) console.error("Auto-assign failed:", assignErr);
-            });
-          }
-        } catch {}
-      }
+      setLoading(false);
+      return;
+    }
+
+    setShowSuccess(true);
+    if (inserted?.id) {
+      supabase.functions.invoke("generate-ai-summary", { body: { complaint_id: inserted.id } })
+        .then(({ error: e }) => { if (e) console.error("AI summary failed:", e); });
     }
     setLoading(false);
   };
@@ -164,7 +160,7 @@ export default function SubmitComplaint() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Submit a Complaint</CardTitle>
-                <CardDescription>Describe your issue and we'll route it to the right team.</CardDescription>
+                <CardDescription>It will be auto-routed to the correct GCTU department.</CardDescription>
               </div>
               {!showAssistant && (
                 <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowAssistant(true)}>
@@ -175,66 +171,83 @@ export default function SubmitComplaint() {
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Category *</Label>
-                  <Select value={category} onValueChange={(v) => { setCategory(v as Category); setSubCategory(""); }}>
-                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <Label>Faculty *</Label>
+                  <Select value={facultyId} onValueChange={(v) => { setFacultyId(v); setDepartmentId(""); }} disabled={refLoading}>
+                    <SelectTrigger><SelectValue placeholder="Select faculty" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="academic">Academic</SelectItem>
-                      <SelectItem value="infrastructure">Infrastructure</SelectItem>
-                      <SelectItem value="administrative">Administrative</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      {faculties.map((f) => (
+                        <SelectItem key={f.id} value={f.id}>{f.faculty_code} — {f.faculty_name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Priority *</Label>
-                  <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
-                    <SelectTrigger><SelectValue placeholder="Select priority" /></SelectTrigger>
+                  <Label>Department *</Label>
+                  <Select value={departmentId} onValueChange={setDepartmentId} disabled={!facultyId}>
+                    <SelectTrigger><SelectValue placeholder={facultyId ? "Select department" : "Select faculty first"} /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
+                      {facultyDepartments.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>{d.department_name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              {category && subCategories[category] && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Sub-category</Label>
-                  <Select value={subCategory} onValueChange={setSubCategory}>
-                    <SelectTrigger><SelectValue placeholder="Select sub-category (optional)" /></SelectTrigger>
+                  <Label>Main Category *</Label>
+                  <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setTypeId(""); }}>
+                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                     <SelectContent>
-                      {subCategories[category].map((sc) => (
-                        <SelectItem key={sc} value={sc.toLowerCase()}>{sc}</SelectItem>
-                      ))}
+                      {categories.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
                     </SelectContent>
                   </Select>
                 </div>
-              )}
+                <div className="space-y-2">
+                  <Label>Complaint Type *</Label>
+                  <Select value={typeId} onValueChange={setTypeId} disabled={!categoryId}>
+                    <SelectTrigger><SelectValue placeholder={categoryId ? "Select complaint type" : "Select category first"} /></SelectTrigger>
+                    <SelectContent className="max-h-72">
+                      {categoryTypes.map((t) => (<SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                  {selectedType && (
+                    <p className="text-xs text-muted-foreground">
+                      Auto-priority: <span className="capitalize font-medium">{selectedType.default_priority}</span>
+                      {selectedType.default_department_code && <> · Routes to <span className="font-mono">{selectedType.default_department_code}</span></>}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Academic Year *</Label>
+                  <Select value={academicYear} onValueChange={setAcademicYear}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={currentAcademicYear()}>{currentAcademicYear()}</SelectItem>
+                      <SelectItem value={nextAcademicYear()}>{nextAcademicYear()}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Semester *</Label>
+                  <Select value={semester} onValueChange={setSemester}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {SEMESTERS.map((s) => (<SelectItem key={s} value={s}>{s}</SelectItem>))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="subject">Subject *</Label>
-                <Input id="subject" value={subject} onChange={(e) => handleSubjectChange(e.target.value)} placeholder="Brief summary of your issue" required />
-                {/* Duplicate detection */}
-                {similarComplaints.length > 0 && (
-                  <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-900/20">
-                    <div className="flex items-center gap-2 text-sm font-medium text-amber-800 dark:text-amber-300 mb-2">
-                      <AlertTriangle className="h-4 w-4" />
-                      Similar complaints found
-                    </div>
-                    <ul className="space-y-1">
-                      {similarComplaints.map((sc) => (
-                        <li key={sc.id} className="text-xs text-amber-700 dark:text-amber-400">
-                          <span className="font-mono">{sc.reference_id}</span> — {sc.subject} ({sc.status})
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">Consider viewing these before submitting a new complaint.</p>
-                  </div>
-                )}
+                <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Brief summary of your issue" required />
               </div>
 
               <div className="space-y-2">
@@ -269,22 +282,14 @@ export default function SubmitComplaint() {
               </div>
 
               <div className="flex items-center space-x-2 rounded-md border p-3 bg-muted/30">
-                <Checkbox
-                  id="anonymous"
-                  checked={isAnonymous}
-                  onCheckedChange={(checked) => setIsAnonymous(checked === true)}
-                />
+                <Checkbox id="anonymous" checked={isAnonymous} onCheckedChange={(c) => setIsAnonymous(c === true)} />
                 <div className="space-y-0.5">
-                  <Label htmlFor="anonymous" className="text-sm font-medium cursor-pointer">
-                    Submit anonymously
-                  </Label>
-                  <p className="text-xs text-muted-foreground">
-                    Your identity will be hidden from other students. Admins can still see your details for investigation purposes.
-                  </p>
+                  <Label htmlFor="anonymous" className="text-sm font-medium cursor-pointer">Submit anonymously</Label>
+                  <p className="text-xs text-muted-foreground">Your identity will be hidden from other students. Admins can still see your details.</p>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading || !category || !priority || description.length < 20}>
+              <Button type="submit" className="w-full" disabled={loading || !facultyId || !departmentId || !categoryId || !typeId || description.length < 20}>
                 {loading ? "Submitting..." : "Submit Complaint"}
               </Button>
             </CardContent>
@@ -296,7 +301,7 @@ export default function SubmitComplaint() {
             <div className="hidden lg:block">
               <div className="sticky top-4 h-[calc(100vh-8rem)]">
                 <KwameFormAssistant
-                  category={category}
+                  category={categories.find((c) => c.id === categoryId)?.code.toLowerCase() ?? ""}
                   description={description}
                   subject={subject}
                   onClose={() => setShowAssistant(false)}
@@ -305,7 +310,7 @@ export default function SubmitComplaint() {
             </div>
             <div className="fixed inset-4 z-50 lg:hidden">
               <KwameFormAssistant
-                category={category}
+                category={categories.find((c) => c.id === categoryId)?.code.toLowerCase() ?? ""}
                 description={description}
                 subject={subject}
                 onClose={() => setShowAssistant(false)}
