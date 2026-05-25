@@ -12,6 +12,11 @@ export interface Profile {
   level: string | null;
   phone_number: string | null;
   profile_completed: boolean;
+  faculty_id: string | null;
+  department_id: string | null;
+  programme: string | null;
+  staff_position: string | null;
+  student_index_number: string | null;
 }
 
 export function useProfile() {
