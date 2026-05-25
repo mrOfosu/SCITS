@@ -392,13 +392,18 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin"
+      app_role:
+        | "admin"
+        | "department_admin"
+        | "hod"
+        | "faculty_admin"
+        | "super_admin"
       complaint_category:
         | "academic"
         | "infrastructure"
         | "administrative"
         | "other"
-      complaint_priority: "low" | "medium" | "high"
+      complaint_priority: "low" | "medium" | "high" | "critical"
       complaint_status: "pending" | "in_review" | "resolved" | "closed"
     }
     CompositeTypes: {
@@ -527,14 +532,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin"],
+      app_role: [
+        "admin",
+        "department_admin",
+        "hod",
+        "faculty_admin",
+        "super_admin",
+      ],
       complaint_category: [
         "academic",
         "infrastructure",
         "administrative",
         "other",
       ],
-      complaint_priority: ["low", "medium", "high"],
+      complaint_priority: ["low", "medium", "high", "critical"],
       complaint_status: ["pending", "in_review", "resolved", "closed"],
     },
   },
