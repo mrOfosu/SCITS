@@ -2,10 +2,14 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+export type AppRole = "student" | "department_admin" | "hod" | "faculty_admin" | "admin" | "super_admin";
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  isAdmin: boolean;
+  role: AppRole;
+  isAdmin: boolean; // any staff role (gets admin layout)
+  isSuperAdmin: boolean;
   isLoading: boolean;
   signOut: () => Promise<void>;
 }
@@ -13,85 +17,64 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   session: null,
   user: null,
+  role: "student",
   isAdmin: false,
+  isSuperAdmin: false,
   isLoading: true,
   signOut: async () => {},
 });
 
+const STAFF_ROLES: AppRole[] = ["department_admin", "hod", "faculty_admin", "admin", "super_admin"];
+
+function pickHighestRole(roles: string[]): AppRole {
+  const order: AppRole[] = ["super_admin", "admin", "faculty_admin", "hod", "department_admin", "student"];
+  for (const r of order) if (roles.includes(r)) return r;
+  return "student";
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [role, setRole] = useState<AppRole>("student");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
 
-    const checkAdmin = async (userId: string) => {
+    const loadRole = async (userId: string) => {
       try {
-        const rpcPromise = supabase.rpc("has_role", {
-          _user_id: userId,
-          _role: "admin",
-        });
-
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("Role check timeout")), 5000);
-        });
-
-        const { data } = await Promise.race([rpcPromise, timeoutPromise]);
-        if (mounted) setIsAdmin(!!data);
+        const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+        const roles = (data || []).map((r: { role: string }) => r.role);
+        if (mounted) setRole(pickHighestRole(roles));
       } catch {
-        if (mounted) setIsAdmin(false);
+        if (mounted) setRole("student");
       }
     };
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      if (!mounted) return;
+      setSession(s);
+      setIsLoading(false);
+      if (s?.user) void loadRole(s.user.id);
+      else setRole("student");
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       setSession(session);
       setIsLoading(false);
+      if (session?.user) void loadRole(session.user.id);
+    }).catch(() => { if (mounted) setIsLoading(false); });
 
-      if (session?.user) {
-        void checkAdmin(session.user.id);
-      } else {
-        setIsAdmin(false);
-      }
-    });
-
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        if (!mounted) return;
-        setSession(session);
-        setIsLoading(false);
-
-        if (session?.user) {
-          void checkAdmin(session.user.id);
-        } else {
-          setIsAdmin(false);
-        }
-      })
-      .catch(() => {
-        if (mounted) {
-          setIsAdmin(false);
-          setIsLoading(false);
-        }
-      });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => { mounted = false; subscription.unsubscribe(); };
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
-  };
+  const signOut = async () => { await supabase.auth.signOut(); };
+
+  const isAdmin = STAFF_ROLES.includes(role);
+  const isSuperAdmin = role === "super_admin" || role === "admin";
 
   return (
-    <AuthContext.Provider
-      value={{ session, user: session?.user ?? null, isAdmin, isLoading, signOut }}
-    >
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, role, isAdmin, isSuperAdmin, isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -90,6 +90,27 @@ export type Database = {
           },
         ]
       }
+      complaint_categories: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       complaint_feedback: {
         Row: {
           complaint_id: string
@@ -154,21 +175,70 @@ export type Database = {
           },
         ]
       }
+      complaint_types: {
+        Row: {
+          category_id: string
+          code: string
+          created_at: string
+          default_department_code: string | null
+          default_priority: Database["public"]["Enums"]["complaint_priority"]
+          id: string
+          name: string
+        }
+        Insert: {
+          category_id: string
+          code: string
+          created_at?: string
+          default_department_code?: string | null
+          default_priority?: Database["public"]["Enums"]["complaint_priority"]
+          id?: string
+          name: string
+        }
+        Update: {
+          category_id?: string
+          code?: string
+          created_at?: string
+          default_department_code?: string | null
+          default_priority?: Database["public"]["Enums"]["complaint_priority"]
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "complaint_types_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "complaint_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       complaints: {
         Row: {
+          academic_year: string | null
           ai_summary: string | null
           assigned_admin_id: string | null
+          assigned_department_id: string | null
+          assigned_officer_id: string | null
           attachment_url: string | null
-          category: Database["public"]["Enums"]["complaint_category"]
+          category: Database["public"]["Enums"]["complaint_category"] | null
+          complaint_category_id: string | null
+          complaint_type_id: string | null
           created_at: string
+          department_id: string | null
           description: string
+          escalation_level: number
           estimated_resolution_hours: number | null
+          faculty_id: string | null
           has_new_updates: boolean
           id: string
           is_anonymous: boolean
           priority: Database["public"]["Enums"]["complaint_priority"]
           reference_id: string | null
+          resolution_date: string | null
           resolved_at: string | null
+          resolved_by: string | null
+          semester: string | null
           status: Database["public"]["Enums"]["complaint_status"]
           sub_category: string | null
           subject: string
@@ -176,19 +246,30 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          academic_year?: string | null
           ai_summary?: string | null
           assigned_admin_id?: string | null
+          assigned_department_id?: string | null
+          assigned_officer_id?: string | null
           attachment_url?: string | null
-          category: Database["public"]["Enums"]["complaint_category"]
+          category?: Database["public"]["Enums"]["complaint_category"] | null
+          complaint_category_id?: string | null
+          complaint_type_id?: string | null
           created_at?: string
+          department_id?: string | null
           description: string
+          escalation_level?: number
           estimated_resolution_hours?: number | null
+          faculty_id?: string | null
           has_new_updates?: boolean
           id?: string
           is_anonymous?: boolean
           priority?: Database["public"]["Enums"]["complaint_priority"]
           reference_id?: string | null
+          resolution_date?: string | null
           resolved_at?: string | null
+          resolved_by?: string | null
+          semester?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
           sub_category?: string | null
           subject: string
@@ -196,19 +277,30 @@ export type Database = {
           user_id: string
         }
         Update: {
+          academic_year?: string | null
           ai_summary?: string | null
           assigned_admin_id?: string | null
+          assigned_department_id?: string | null
+          assigned_officer_id?: string | null
           attachment_url?: string | null
-          category?: Database["public"]["Enums"]["complaint_category"]
+          category?: Database["public"]["Enums"]["complaint_category"] | null
+          complaint_category_id?: string | null
+          complaint_type_id?: string | null
           created_at?: string
+          department_id?: string | null
           description?: string
+          escalation_level?: number
           estimated_resolution_hours?: number | null
+          faculty_id?: string | null
           has_new_updates?: boolean
           id?: string
           is_anonymous?: boolean
           priority?: Database["public"]["Enums"]["complaint_priority"]
           reference_id?: string | null
+          resolution_date?: string | null
           resolved_at?: string | null
+          resolved_by?: string | null
+          semester?: string | null
           status?: Database["public"]["Enums"]["complaint_status"]
           sub_category?: string | null
           subject?: string
@@ -217,6 +309,41 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "complaints_assigned_department_id_fkey"
+            columns: ["assigned_department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_complaint_category_id_fkey"
+            columns: ["complaint_category_id"]
+            isOneToOne: false
+            referencedRelation: "complaint_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_complaint_type_id_fkey"
+            columns: ["complaint_type_id"]
+            isOneToOne: false
+            referencedRelation: "complaint_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "complaints_faculty_id_fkey"
+            columns: ["faculty_id"]
+            isOneToOne: false
+            referencedRelation: "faculties"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "complaints_user_id_profiles_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -224,6 +351,103 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      department_staff: {
+        Row: {
+          created_at: string
+          department_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          department_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          department_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "department_staff_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      departments: {
+        Row: {
+          created_at: string
+          department_code: string
+          department_email: string | null
+          department_name: string
+          description: string | null
+          faculty_id: string
+          hod_name: string | null
+          id: string
+          is_active: boolean
+        }
+        Insert: {
+          created_at?: string
+          department_code: string
+          department_email?: string | null
+          department_name: string
+          description?: string | null
+          faculty_id: string
+          hod_name?: string | null
+          id?: string
+          is_active?: boolean
+        }
+        Update: {
+          created_at?: string
+          department_code?: string
+          department_email?: string | null
+          department_name?: string
+          description?: string | null
+          faculty_id?: string
+          hod_name?: string | null
+          id?: string
+          is_active?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_faculty_id_fkey"
+            columns: ["faculty_id"]
+            isOneToOne: false
+            referencedRelation: "faculties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faculties: {
+        Row: {
+          created_at: string
+          description: string | null
+          faculty_code: string
+          faculty_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          faculty_code: string
+          faculty_name: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          faculty_code?: string
+          faculty_name?: string
+          id?: string
+        }
+        Relationships: []
       }
       notification_log: {
         Row: {
@@ -325,40 +549,70 @@ export type Database = {
         Row: {
           created_at: string
           department: string | null
+          department_id: string | null
           display_name: string
           email: string | null
+          faculty_id: string | null
           full_name: string | null
           id: string
           level: string | null
           phone_number: string | null
           profile_completed: boolean
+          programme: string | null
+          staff_position: string | null
           student_id: string | null
+          student_index_number: string | null
         }
         Insert: {
           created_at?: string
           department?: string | null
+          department_id?: string | null
           display_name: string
           email?: string | null
+          faculty_id?: string | null
           full_name?: string | null
           id: string
           level?: string | null
           phone_number?: string | null
           profile_completed?: boolean
+          programme?: string | null
+          staff_position?: string | null
           student_id?: string | null
+          student_index_number?: string | null
         }
         Update: {
           created_at?: string
           department?: string | null
+          department_id?: string | null
           display_name?: string
           email?: string | null
+          faculty_id?: string | null
           full_name?: string | null
           id?: string
           level?: string | null
           phone_number?: string | null
           profile_completed?: boolean
+          programme?: string | null
+          staff_position?: string | null
           student_id?: string | null
+          student_index_number?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_faculty_id_fkey"
+            columns: ["faculty_id"]
+            isOneToOne: false
+            referencedRelation: "faculties"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -390,15 +644,29 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_dept_staff_for: {
+        Args: { _dept: string; _user_id: string }
+        Returns: boolean
+      }
+      is_faculty_admin_for: {
+        Args: { _faculty: string; _user_id: string }
+        Returns: boolean
+      }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin"
+      app_role:
+        | "admin"
+        | "department_admin"
+        | "hod"
+        | "faculty_admin"
+        | "super_admin"
       complaint_category:
         | "academic"
         | "infrastructure"
         | "administrative"
         | "other"
-      complaint_priority: "low" | "medium" | "high"
+      complaint_priority: "low" | "medium" | "high" | "critical"
       complaint_status: "pending" | "in_review" | "resolved" | "closed"
     }
     CompositeTypes: {
@@ -527,14 +795,20 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin"],
+      app_role: [
+        "admin",
+        "department_admin",
+        "hod",
+        "faculty_admin",
+        "super_admin",
+      ],
       complaint_category: [
         "academic",
         "infrastructure",
         "administrative",
         "other",
       ],
-      complaint_priority: ["low", "medium", "high"],
+      complaint_priority: ["low", "medium", "high", "critical"],
       complaint_status: ["pending", "in_review", "resolved", "closed"],
     },
   },
