@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -36,33 +36,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole>("student");
   const [isLoading, setIsLoading] = useState(true);
+  const loadedRoleForUserRef = useRef<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
     const loadRole = async (userId: string) => {
+      // Avoid re-loading for the same user on every token refresh
+      if (loadedRoleForUserRef.current === userId) {
+        if (mounted) setIsLoading(false);
+        return;
+      }
       try {
-        const { data } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+        const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+        if (!mounted) return;
+        if (error) {
+          // Don't flip role on transient errors; just mark loading done
+          setIsLoading(false);
+          return;
+        }
         const roles = (data || []).map((r: { role: string }) => r.role);
-        if (mounted) setRole(pickHighestRole(roles));
+        setRole(pickHighestRole(roles));
+        loadedRoleForUserRef.current = userId;
       } catch {
-        if (mounted) setRole("student");
+        // ignore transient errors
+      } finally {
+        if (mounted) setIsLoading(false);
       }
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
       if (!mounted) return;
       setSession(s);
-      setIsLoading(false);
-      if (s?.user) void loadRole(s.user.id);
-      else setRole("student");
+      if (s?.user) {
+        // Defer role loading to avoid deadlocks inside the callback
+        setTimeout(() => { if (mounted) void loadRole(s.user.id); }, 0);
+      } else {
+        loadedRoleForUserRef.current = null;
+        setRole("student");
+        setIsLoading(false);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return;
       setSession(session);
-      setIsLoading(false);
-      if (session?.user) void loadRole(session.user.id);
+      if (session?.user) {
+        void loadRole(session.user.id);
+      } else {
+        setIsLoading(false);
+      }
     }).catch(() => { if (mounted) setIsLoading(false); });
 
     return () => { mounted = false; subscription.unsubscribe(); };
