@@ -1,84 +1,185 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
-import { Users, Search, ShieldCheck, UserX, Trash2 } from "lucide-react";
-import ConfirmDialog from "@/components/ConfirmDialog";
+import { Users, Search, Shield } from "lucide-react";
+import { useAuth, type AppRole } from "@/hooks/useAuth";
+import { useReferenceData } from "@/hooks/useReferenceData";
 
 interface UserProfile {
   id: string;
   display_name: string;
   email: string | null;
-  department: string | null;
-  level: string | null;
+  faculty_id: string | null;
+  department_id: string | null;
   profile_completed: boolean;
-  isAdmin: boolean;
+  role: AppRole;
+}
+
+const ASSIGNABLE_ROLES: { value: AppRole; label: string; needsDept?: boolean; needsFaculty?: boolean }[] = [
+  { value: "student", label: "Student" },
+  { value: "department_admin", label: "Department Admin", needsDept: true, needsFaculty: true },
+  { value: "hod", label: "Head of Department (HOD)", needsDept: true, needsFaculty: true },
+  { value: "faculty_admin", label: "Faculty Admin", needsFaculty: true },
+  { value: "super_admin", label: "Super Admin" },
+];
+
+const ROLE_ORDER: AppRole[] = ["super_admin", "admin", "faculty_admin", "hod", "department_admin", "student"];
+
+function highestRole(roles: string[]): AppRole {
+  for (const r of ROLE_ORDER) if (roles.includes(r)) return r;
+  return "student";
 }
 
 export default function UserManagementSection() {
+  const { isSuperAdmin } = useAuth();
+  const { faculties, departments } = useReferenceData();
+
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [confirmTarget, setConfirmTarget] = useState<{ userId: string; isAdmin: boolean } | null>(null);
+  const [editing, setEditing] = useState<UserProfile | null>(null);
+  const [editRole, setEditRole] = useState<AppRole>("student");
+  const [editFaculty, setEditFaculty] = useState<string>("");
+  const [editDept, setEditDept] = useState<string>("");
+  const [saving, setSaving] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, display_name, email, department, level, profile_completed")
-      .order("created_at", { ascending: false });
+    const [{ data: profiles }, { data: roles }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select("id, display_name, email, faculty_id, department_id, profile_completed")
+        .order("created_at", { ascending: false }),
+      supabase.from("user_roles").select("user_id, role"),
+    ]);
 
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("user_id, role");
-
-    const adminIds = new Set((roles || []).filter(r => r.role === "admin").map(r => r.user_id));
+    const rolesByUser = new Map<string, string[]>();
+    (roles || []).forEach((r: any) => {
+      const list = rolesByUser.get(r.user_id) || [];
+      list.push(r.role);
+      rolesByUser.set(r.user_id, list);
+    });
 
     setUsers(
-      (profiles || []).map(p => ({
+      (profiles || []).map((p: any) => ({
         ...p,
-        isAdmin: adminIds.has(p.id),
+        role: highestRole(rolesByUser.get(p.id) || []),
       }))
     );
     setLoading(false);
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
-  const toggleAdmin = async (userId: string, currentlyAdmin: boolean) => {
-    if (currentlyAdmin) {
-      const { error } = await supabase.from("user_roles").delete().eq("user_id", userId).eq("role", "admin");
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Admin role removed" });
-        fetchUsers();
+  const filteredDepartments = useMemo(
+    () => departments.filter((d) => !editFaculty || d.faculty_id === editFaculty),
+    [departments, editFaculty]
+  );
+
+  const openEdit = (user: UserProfile) => {
+    setEditing(user);
+    setEditRole(user.role);
+    setEditFaculty(user.faculty_id || "");
+    setEditDept(user.department_id || "");
+  };
+
+  const handleSave = async () => {
+    if (!editing) return;
+    const roleMeta = ASSIGNABLE_ROLES.find((r) => r.value === editRole);
+    if (roleMeta?.needsFaculty && !editFaculty) {
+      toast({ title: "Faculty required", description: "Select a faculty for this role.", variant: "destructive" });
+      return;
+    }
+    if (roleMeta?.needsDept && !editDept) {
+      toast({ title: "Department required", description: "Select a department for this role.", variant: "destructive" });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // 1. Replace roles: delete all existing, then insert new (skip insert for student)
+      const { error: delErr } = await supabase.from("user_roles").delete().eq("user_id", editing.id);
+      if (delErr) throw delErr;
+
+      if (editRole !== "student") {
+        const { error: insErr } = await supabase
+          .from("user_roles")
+          .insert({ user_id: editing.id, role: editRole });
+        if (insErr) throw insErr;
       }
-    } else {
-      const { error } = await supabase.from("user_roles").insert({ user_id: userId, role: "admin" });
-      if (error) {
-        toast({ title: "Error", description: error.message, variant: "destructive" });
-      } else {
-        toast({ title: "Admin role granted" });
-        fetchUsers();
+
+      // 2. Update profile faculty/department for staff roles
+      const profileUpdate: Record<string, string | null> = {};
+      if (roleMeta?.needsFaculty || roleMeta?.needsDept) {
+        profileUpdate.faculty_id = editFaculty || null;
+        profileUpdate.department_id = editDept || null;
       }
+      if (Object.keys(profileUpdate).length > 0) {
+        const { error: profErr } = await supabase.from("profiles").update(profileUpdate).eq("id", editing.id);
+        if (profErr) throw profErr;
+      }
+
+      // 3. Sync department_staff link for dept_admin / hod
+      await supabase.from("department_staff").delete().eq("user_id", editing.id);
+      if ((editRole === "department_admin" || editRole === "hod") && editDept) {
+        const { error: dsErr } = await supabase
+          .from("department_staff")
+          .insert({ user_id: editing.id, department_id: editDept });
+        if (dsErr) throw dsErr;
+      }
+
+      toast({ title: "User updated", description: `${editing.display_name} is now ${roleMeta?.label}.` });
+      setEditing(null);
+      fetchUsers();
+    } catch (e: any) {
+      toast({ title: "Update failed", description: e.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
     }
   };
 
-  const filtered = users.filter(u =>
-    (u.display_name || "").toLowerCase().includes(search.toLowerCase()) ||
-    (u.email || "").toLowerCase().includes(search.toLowerCase())
+  const filtered = users.filter(
+    (u) =>
+      (u.display_name || "").toLowerCase().includes(search.toLowerCase()) ||
+      (u.email || "").toLowerCase().includes(search.toLowerCase())
   );
+
+  const facultyName = (id: string | null) => faculties.find((f) => f.id === id)?.faculty_code || "—";
+  const deptName = (id: string | null) => departments.find((d) => d.id === id)?.department_code || "—";
+
+  const roleBadgeVariant = (role: AppRole) => {
+    if (role === "super_admin" || role === "admin") return "default" as const;
+    if (role === "student") return "secondary" as const;
+    return "outline" as const;
+  };
+
+  if (!isSuperAdmin) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <Shield className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+          <p className="text-sm text-muted-foreground">Only Super Admins can manage user roles.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-foreground">User & Role Management</h2>
-        <p className="text-sm text-muted-foreground">Manage system users and their roles</p>
+        <p className="text-sm text-muted-foreground">
+          Assign roles and link staff to their faculty and department.
+        </p>
       </div>
 
       <Card>
@@ -93,7 +194,7 @@ export default function UserManagementSection() {
               <Input
                 placeholder="Search users..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
               />
             </div>
@@ -109,9 +210,9 @@ export default function UserManagementSection() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Faculty</TableHead>
                     <TableHead>Department</TableHead>
                     <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -123,30 +224,20 @@ export default function UserManagementSection() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filtered.map(user => (
+                    filtered.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.display_name}</TableCell>
                         <TableCell className="text-muted-foreground">{user.email || "—"}</TableCell>
-                        <TableCell>{user.department || "—"}</TableCell>
+                        <TableCell className="text-sm">{facultyName(user.faculty_id)}</TableCell>
+                        <TableCell className="text-sm">{deptName(user.department_id)}</TableCell>
                         <TableCell>
-                          <Badge variant={user.isAdmin ? "default" : "secondary"}>
-                            {user.isAdmin ? "Admin" : "Student"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={user.profile_completed ? "outline" : "secondary"} className="text-xs">
-                            {user.profile_completed ? "Active" : "Incomplete"}
+                          <Badge variant={roleBadgeVariant(user.role)} className="capitalize">
+                            {user.role.replace(/_/g, " ")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setConfirmTarget({ userId: user.id, isAdmin: user.isAdmin })}
-                            className="text-xs"
-                          >
-                            <ShieldCheck className="mr-1 h-3 w-3" />
-                            {user.isAdmin ? "Remove Admin" : "Make Admin"}
+                          <Button variant="outline" size="sm" onClick={() => openEdit(user)}>
+                            Manage
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -159,24 +250,84 @@ export default function UserManagementSection() {
         </CardContent>
       </Card>
 
-      <ConfirmDialog
-        open={!!confirmTarget}
-        onOpenChange={(open) => !open && setConfirmTarget(null)}
-        title={confirmTarget?.isAdmin ? "Remove Admin Role" : "Grant Admin Role"}
-        description={
-          confirmTarget?.isAdmin
-            ? "Are you sure you want to remove admin privileges from this user? They will lose access to admin features."
-            : "Are you sure you want to grant admin privileges to this user? They will have full access to manage complaints and settings."
-        }
-        confirmLabel={confirmTarget?.isAdmin ? "Remove Admin" : "Make Admin"}
-        variant={confirmTarget?.isAdmin ? "destructive" : "default"}
-        onConfirm={() => {
-          if (confirmTarget) {
-            toggleAdmin(confirmTarget.userId, confirmTarget.isAdmin);
-            setConfirmTarget(null);
-          }
-        }}
-      />
+      <Dialog open={!!editing} onOpenChange={(open) => !open && setEditing(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Manage {editing?.display_name}</DialogTitle>
+            <DialogDescription>{editing?.email}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Role</label>
+              <Select value={editRole} onValueChange={(v) => setEditRole(v as AppRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSIGNABLE_ROLES.map((r) => (
+                    <SelectItem key={r.value} value={r.value}>
+                      {r.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(ASSIGNABLE_ROLES.find((r) => r.value === editRole)?.needsFaculty ||
+              ASSIGNABLE_ROLES.find((r) => r.value === editRole)?.needsDept) && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Faculty</label>
+                <Select
+                  value={editFaculty}
+                  onValueChange={(v) => {
+                    setEditFaculty(v);
+                    setEditDept("");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select faculty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {faculties.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {f.faculty_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {ASSIGNABLE_ROLES.find((r) => r.value === editRole)?.needsDept && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Department</label>
+                <Select value={editDept} onValueChange={setEditDept} disabled={!editFaculty}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={editFaculty ? "Select department" : "Select faculty first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredDepartments.map((d) => (
+                      <SelectItem key={d.id} value={d.id}>
+                        {d.department_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)} disabled={saving}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Saving..." : "Save Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
