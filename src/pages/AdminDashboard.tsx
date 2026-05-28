@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, FileText, Download, Bell, Eye } from "lucide-react";
+import RoleGreeting from "@/components/RoleGreeting";
 
 export interface ComplaintWithProfile {
   id: string;
@@ -90,6 +91,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-5 sm:space-y-6">
+      <RoleGreeting />
       <div>
         <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Overview of complaint analytics and trends</p>
