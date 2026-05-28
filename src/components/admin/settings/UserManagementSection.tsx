@@ -140,6 +140,16 @@ export default function UserManagementSection() {
         if (dsErr) throw dsErr;
       }
 
+      // 4. Clear out-of-scope notifications when role/scope changes so they
+      //    don't see notifications from their previous role/faculty/department.
+      const scopeChanged =
+        editing.role !== editRole ||
+        (editing.faculty_id || "") !== (editFaculty || "") ||
+        (editing.department_id || "") !== (editDept || "");
+      if (scopeChanged) {
+        await supabase.from("notifications").delete().eq("user_id", editing.id);
+      }
+
       toast({ title: "User updated", description: `${editing.display_name} is now ${roleMeta?.label}.` });
       setEditing(null);
       fetchUsers();
@@ -147,6 +157,30 @@ export default function UserManagementSection() {
       toast({ title: "Update failed", description: e.message, variant: "destructive" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.id === currentUser?.id) {
+      toast({ title: "Cannot remove yourself", variant: "destructive" });
+      return;
+    }
+    setDeleting(true);
+    try {
+      // Remove all access artifacts. Auth row remains but user has no profile/role/access.
+      await supabase.from("notifications").delete().eq("user_id", deleteTarget.id);
+      await supabase.from("department_staff").delete().eq("user_id", deleteTarget.id);
+      await supabase.from("user_roles").delete().eq("user_id", deleteTarget.id);
+      const { error } = await supabase.from("profiles").delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast({ title: "User removed", description: `${deleteTarget.display_name} has been removed.` });
+      setDeleteTarget(null);
+      fetchUsers();
+    } catch (e: any) {
+      toast({ title: "Remove failed", description: e.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
     }
   };
 
