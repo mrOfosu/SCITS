@@ -377,6 +377,16 @@ export default function UserManagementSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && !deleting && setDeleteTarget(null)}
+        title="Remove user"
+        description={`This will permanently remove ${deleteTarget?.display_name || "this user"} from the system, including their profile, roles, and notifications. Submitted complaints will remain. This action cannot be undone.`}
+        confirmLabel={deleting ? "Removing..." : "Remove user"}
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
