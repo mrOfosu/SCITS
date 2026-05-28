@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { toast } from "@/hooks/use-toast";
-import { Users, Search, Shield } from "lucide-react";
+import { Users, Search, Shield, Trash2 } from "lucide-react";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { useReferenceData } from "@/hooks/useReferenceData";
 
@@ -38,7 +39,7 @@ function highestRole(roles: string[]): AppRole {
 }
 
 export default function UserManagementSection() {
-  const { isSuperAdmin } = useAuth();
+  const { user: currentUser, isSuperAdmin } = useAuth();
   const { faculties, departments } = useReferenceData();
 
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -49,6 +50,8 @@ export default function UserManagementSection() {
   const [editFaculty, setEditFaculty] = useState<string>("");
   const [editDept, setEditDept] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<UserProfile | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
