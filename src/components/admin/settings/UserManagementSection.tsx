@@ -7,8 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { toast } from "@/hooks/use-toast";
-import { Users, Search, Shield } from "lucide-react";
+import { Users, Search, Shield, Trash2 } from "lucide-react";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { useReferenceData } from "@/hooks/useReferenceData";
 
@@ -38,7 +39,7 @@ function highestRole(roles: string[]): AppRole {
 }
 
 export default function UserManagementSection() {
-  const { isSuperAdmin } = useAuth();
+  const { user: currentUser, isSuperAdmin } = useAuth();
   const { faculties, departments } = useReferenceData();
 
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -49,6 +50,8 @@ export default function UserManagementSection() {
   const [editFaculty, setEditFaculty] = useState<string>("");
   const [editDept, setEditDept] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<UserProfile | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -137,6 +140,16 @@ export default function UserManagementSection() {
         if (dsErr) throw dsErr;
       }
 
+      // 4. Clear out-of-scope notifications when role/scope changes so they
+      //    don't see notifications from their previous role/faculty/department.
+      const scopeChanged =
+        editing.role !== editRole ||
+        (editing.faculty_id || "") !== (editFaculty || "") ||
+        (editing.department_id || "") !== (editDept || "");
+      if (scopeChanged) {
+        await supabase.from("notifications").delete().eq("user_id", editing.id);
+      }
+
       toast({ title: "User updated", description: `${editing.display_name} is now ${roleMeta?.label}.` });
       setEditing(null);
       fetchUsers();
@@ -144,6 +157,30 @@ export default function UserManagementSection() {
       toast({ title: "Update failed", description: e.message, variant: "destructive" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.id === currentUser?.id) {
+      toast({ title: "Cannot remove yourself", variant: "destructive" });
+      return;
+    }
+    setDeleting(true);
+    try {
+      // Remove all access artifacts. Auth row remains but user has no profile/role/access.
+      await supabase.from("notifications").delete().eq("user_id", deleteTarget.id);
+      await supabase.from("department_staff").delete().eq("user_id", deleteTarget.id);
+      await supabase.from("user_roles").delete().eq("user_id", deleteTarget.id);
+      const { error } = await supabase.from("profiles").delete().eq("id", deleteTarget.id);
+      if (error) throw error;
+      toast({ title: "User removed", description: `${deleteTarget.display_name} has been removed.` });
+      setDeleteTarget(null);
+      fetchUsers();
+    } catch (e: any) {
+      toast({ title: "Remove failed", description: e.message, variant: "destructive" });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -236,9 +273,21 @@ export default function UserManagementSection() {
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="outline" size="sm" onClick={() => openEdit(user)}>
-                            Manage
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button variant="outline" size="sm" onClick={() => openEdit(user)}>
+                              Manage
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteTarget(user)}
+                              disabled={user.id === currentUser?.id}
+                              title={user.id === currentUser?.id ? "You cannot remove yourself" : "Remove user"}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -328,6 +377,16 @@ export default function UserManagementSection() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && !deleting && setDeleteTarget(null)}
+        title="Remove user"
+        description={`This will permanently remove ${deleteTarget?.display_name || "this user"} from the system, including their profile, roles, and notifications. Submitted complaints will remain. This action cannot be undone.`}
+        confirmLabel={deleting ? "Removing..." : "Remove user"}
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

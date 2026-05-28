@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ComplaintListSkeleton } from "@/components/ui/skeleton-card";
 import { PlusCircle, Eye, Paperclip, BookmarkCheck, Clock } from "lucide-react";
+import RoleGreeting from "@/components/RoleGreeting";
 import type { Tables } from "@/integrations/supabase/types";
 import { timeAgo, estimatedResolutionLabel } from "@/lib/timeUtils";
 
@@ -71,6 +72,7 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-5 sm:space-y-6 animate-fade-in pb-24 sm:pb-6">
+      <RoleGreeting />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="space-y-1 min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">My Complaints</h1>
