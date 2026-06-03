@@ -13,14 +13,12 @@ interface SystemPrefs {
   defaultPriority: string;
   autoAssign: boolean;
   notificationsEnabled: boolean;
-  aiChatbotEnabled: boolean;
 }
 
 const defaultPrefs: SystemPrefs = {
   defaultPriority: "medium",
   autoAssign: false,
   notificationsEnabled: true,
-  aiChatbotEnabled: false,
 };
 
 export default function SystemPreferencesSection() {
