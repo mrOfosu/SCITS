@@ -439,7 +439,7 @@ export default function ComplaintDetail() {
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                {generatingSummary ? "Generating summary..." : "No AI summary yet. Click Generate to create one."}
+                {generatingSummary ? "Generating suggestions..." : "No suggestions yet. Click Generate to create one."}
               </p>
             )}
           </CardContent>
