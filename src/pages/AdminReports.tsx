@@ -19,7 +19,23 @@ export default function AdminReports() {
       });
   }, []);
 
-  if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-7 w-40 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-72 bg-muted/60 rounded animate-pulse" />
+          </div>
+          <div className="h-9 w-32 bg-muted/60 rounded animate-pulse" />
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="h-64 rounded-lg bg-muted/60 animate-pulse" />
+          <div className="h-64 rounded-lg bg-muted/60 animate-pulse" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

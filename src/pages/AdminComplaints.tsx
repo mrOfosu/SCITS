@@ -53,7 +53,23 @@ export default function AdminComplaints() {
     });
   }, [complaints, filters]);
 
-  if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <div className="h-7 w-40 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-72 bg-muted/60 rounded animate-pulse" />
+          </div>
+          <div className="h-9 w-32 bg-muted/60 rounded animate-pulse" />
+        </div>
+        <div className="h-12 bg-muted/60 rounded animate-pulse" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-20 rounded-lg bg-muted/60 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
