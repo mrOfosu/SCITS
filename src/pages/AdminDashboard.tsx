@@ -87,7 +87,27 @@ export default function AdminDashboard() {
 
   const recentComplaints = useMemo(() => complaints.slice(0, 5), [complaints]);
 
-  if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="space-y-5 sm:space-y-6 animate-fade-in">
+        <div className="h-16 rounded-lg bg-muted/60 animate-pulse" />
+        <div className="space-y-2">
+          <div className="h-7 w-40 bg-muted rounded animate-pulse" />
+          <div className="h-4 w-72 bg-muted/60 rounded animate-pulse" />
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 rounded-lg bg-muted/60 animate-pulse" />
+          ))}
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="h-64 rounded-lg bg-muted/60 animate-pulse" />
+          <div className="h-64 rounded-lg bg-muted/60 animate-pulse" />
+        </div>
+        <div className="h-48 rounded-lg bg-muted/60 animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5 sm:space-y-6">
