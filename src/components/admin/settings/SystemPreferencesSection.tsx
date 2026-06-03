@@ -127,18 +127,6 @@ export default function SystemPreferencesSection() {
             <Switch checked={prefs.notificationsEnabled} onCheckedChange={(v) => update("notificationsEnabled", v)} />
           </div>
 
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Bot className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <Label>AI Student Chatbot</Label>
-                <p className="text-xs text-muted-foreground">Enable AI-powered chatbot for students</p>
-              </div>
-            </div>
-            <Switch checked={prefs.aiChatbotEnabled} onCheckedChange={(v) => update("aiChatbotEnabled", v)} />
-          </div>
         </CardContent>
       </Card>
 
