@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, History, FileText, MessageSquare, PenLine, Trash2, Plus } from "lucide-react";
+import { ArrowRight, History, FileText, MessageSquare, PenLine, Trash2, Plus, TrendingUp } from "lucide-react";
 
 interface ActivityEntry {
   id: string;
@@ -31,6 +31,7 @@ const actionIcons: Record<string, typeof History> = {
   response_added: MessageSquare,
   complaint_edited: PenLine,
   complaint_deleted: Trash2,
+  escalated: TrendingUp,
 };
 
 const actionLabels: Record<string, string> = {
@@ -39,6 +40,7 @@ const actionLabels: Record<string, string> = {
   response_added: "Response Added",
   complaint_edited: "Complaint Edited",
   complaint_deleted: "Complaint Deleted",
+  escalated: "Escalated to HOD",
 };
 
 export default function ActivityLog({ activity }: ActivityLogProps) {
@@ -47,9 +49,10 @@ export default function ActivityLog({ activity }: ActivityLogProps) {
   return (
     <div className="space-y-3">
       <h3 className="flex items-center gap-1.5 font-semibold">
-        <History className="h-4 w-4" /> Activity History
+        <History className="h-4 w-4" /> Complaint Timeline
       </h3>
-      <div className="space-y-2">
+      <div className="relative space-y-2 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-border">
+
         {activity.map((a) => {
           const Icon = actionIcons[a.action_type] || FileText;
           const label = actionLabels[a.action_type] || a.action_type;
@@ -85,6 +88,11 @@ export default function ActivityLog({ activity }: ActivityLogProps) {
                 {a.action_type === "response_added" && a.new_value && (
                   <p className="pt-1 text-xs text-muted-foreground italic">
                     "{(a.new_value as Record<string, string>).message_preview}..."
+                  </p>
+                )}
+                {a.action_type === "escalated" && a.new_value && (
+                  <p className="pt-1 text-xs text-muted-foreground italic">
+                    Reason: {(a.new_value as Record<string, string>).reason}
                   </p>
                 )}
               </div>

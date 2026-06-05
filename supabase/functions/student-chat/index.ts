@@ -121,12 +121,21 @@ serve(async (req) => {
 
     // Add complaint status context if provided
     if (complaints_context && Array.isArray(complaints_context) && complaints_context.length > 0) {
-      const statusSummary = complaints_context.map((c: any) =>
-        `- ${c.reference_id || 'No ref'}: "${c.subject}" | Status: ${c.status} | Category: ${c.category} | Priority: ${c.priority} | Submitted: ${c.created_at}`
-      ).join("\n");
+      const statusSummary = complaints_context.map((c: any) => {
+        const ageDays = c.created_at ? Math.floor((Date.now() - new Date(c.created_at).getTime()) / 86400000) : 0;
+        const escLvl = c.escalation_level || 0;
+        const handler = c.current_handler_role ? c.current_handler_role.replace("_", " ") : "department admin";
+        let escNote = "";
+        if (escLvl >= 1) {
+          escNote = ` | ESCALATED to HOD on ${c.escalated_at} (reason: ${c.escalation_reason || "n/a"})`;
+        } else if (["pending", "in_review"].includes(c.status) && ageDays >= 3) {
+          escNote = " | OVERDUE: eligible for escalation to HOD (>=3 days at department level)";
+        }
+        return `- ${c.reference_id || 'No ref'}: "${c.subject}" | Status: ${c.status} | Handler: ${handler} | Age: ${ageDays}d${escNote}`;
+      }).join("\n");
       contextMessages.push({
         role: "system",
-        content: `The student's current complaints:\n${statusSummary}\n\nUse this data to answer questions about their complaint status.`
+        content: `The student's current complaints:\n${statusSummary}\n\nEscalation policy: Complaints flow Student → Department Admin → HOD. Complaints unresolved at the department level for 3+ days are auto-escalated to the HOD; department admins can also manually escalate.\n\nWhen answering:\n- If a complaint is escalated, say: "Your complaint is currently under review by the Head of Department."\n- If overdue but not yet escalated, say: "This complaint has exceeded the department response period and is eligible for escalation to the Head of Department."\n- If resolved, say: "Your complaint has been successfully resolved."`
       });
     }
 

@@ -8,7 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Clock, User, Bookmark, BookmarkCheck, RotateCcw, Download, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, RefreshCw, Clock, User, Bookmark, BookmarkCheck, RotateCcw, Download, Trash2, TrendingUp, Shield } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import AttachmentPreview from "@/components/AttachmentPreview";
 import ReactMarkdown from "react-markdown";
 import AdminBreadcrumb from "@/components/admin/AdminBreadcrumb";
@@ -109,6 +111,11 @@ export default function ComplaintDetail() {
   const [bookmarked, setBookmarked] = useState(false);
   const [feedback, setFeedback] = useState<boolean | null | undefined>(undefined);
   const [assignedAdmin, setAssignedAdmin] = useState<string | null>(null);
+  const [currentHandler, setCurrentHandler] = useState<string | null>(null);
+  const [showEscalateDialog, setShowEscalateDialog] = useState(false);
+  const [escalationReason, setEscalationReason] = useState("");
+  const [escalating, setEscalating] = useState(false);
+  const [myRoles, setMyRoles] = useState<string[]>([]);
 
   const fetchData = useCallback(async () => {
     if (!id || !user) return;
@@ -129,6 +136,25 @@ export default function ComplaintDetail() {
         .maybeSingle();
       setAssignedAdmin(adminProfile?.display_name || null);
     }
+
+    // Fetch current handler name
+    if (comp && comp.current_handler_id) {
+      const { data: handlerProfile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", comp.current_handler_id)
+        .maybeSingle();
+      setCurrentHandler(handlerProfile?.display_name || null);
+    } else {
+      setCurrentHandler(null);
+    }
+
+    // Fetch my roles (for escalate button visibility)
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+    setMyRoles((roles || []).map((r) => r.role));
 
     const { data: resp } = await supabase
       .from("complaint_responses")
@@ -197,6 +223,20 @@ export default function ComplaintDetail() {
   }, [id, user, isAdmin]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Realtime: refresh on complaint, response, activity, or escalation changes
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`complaint-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaints", filter: `id=eq.${id}` }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaint_responses", filter: `complaint_id=eq.${id}` }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaint_activity", filter: `complaint_id=eq.${id}` }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaint_escalations", filter: `complaint_id=eq.${id}` }, () => fetchData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, fetchData]);
+
 
   useEffect(() => {
     if (!isAdmin || !complaint) return;
@@ -294,6 +334,25 @@ export default function ComplaintDetail() {
       toast({ title: "Complaint bookmarked" });
     }
   };
+
+  const handleEscalate = async () => {
+    if (!id || escalationReason.trim().length < 3) {
+      toast({ title: "Reason required", description: "Please provide a reason (3+ chars).", variant: "destructive" });
+      return;
+    }
+    setEscalating(true);
+    const { error } = await supabase.rpc("escalate_complaint", { _complaint_id: id, _reason: escalationReason.trim() });
+    if (error) {
+      toast({ title: "Escalation failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Escalated to HOD", description: "The Head of Department has been notified." });
+      setShowEscalateDialog(false);
+      setEscalationReason("");
+      fetchData();
+    }
+    setEscalating(false);
+  };
+
 
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
   if (!complaint) return <div className="py-12 text-center text-muted-foreground">Complaint not found.</div>;
@@ -407,6 +466,33 @@ export default function ComplaintDetail() {
             )}
           </div>
 
+          {/* Handler / Escalation status */}
+          {(() => {
+            const c = complaint as unknown as { current_handler_role: string | null; escalation_level: number | null; escalated_at: string | null; escalation_reason: string | null };
+            const role = c.current_handler_role;
+            const escalated = (c.escalation_level || 0) >= 1;
+            return (
+              <div className={`rounded-md border p-3 text-sm ${escalated ? "border-amber-500/30 bg-amber-500/5" : "bg-muted/30"}`}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {escalated ? <TrendingUp className="h-4 w-4 text-amber-600" /> : <Shield className="h-4 w-4 text-muted-foreground" />}
+                  <span className="font-medium">Current Handler:</span>
+                  <span>{currentHandler || "Unassigned"}</span>
+                  {role && (
+                    <Badge variant={escalated ? "default" : "outline"} className="capitalize">
+                      {role.replace("_", " ")}
+                    </Badge>
+                  )}
+                </div>
+                {escalated && c.escalated_at && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Escalated to HOD {timeAgo(c.escalated_at)}{c.escalation_reason ? ` — ${c.escalation_reason}` : ""}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+
+
           <p className="whitespace-pre-wrap text-sm">{complaint.description}</p>
           {complaint.attachment_url && (
             <AttachmentPreview attachmentUrl={complaint.attachment_url} />
@@ -495,6 +581,45 @@ export default function ComplaintDetail() {
         </Card>
       )}
 
+
+      {/* Escalate to HOD (department admin only, not yet escalated, not resolved/closed) */}
+      {isAdmin && myRoles.includes("department_admin") && (complaint as any).escalation_level === 0 && complaint.status !== "resolved" && complaint.status !== "closed" && (
+        <Card>
+          <CardContent className="flex items-center justify-between gap-3 p-4">
+            <div>
+              <p className="text-sm font-medium">Need higher review?</p>
+              <p className="text-xs text-muted-foreground">Escalate this complaint to the Head of Department.</p>
+            </div>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowEscalateDialog(true)}>
+              <TrendingUp className="h-4 w-4" /> Escalate to HOD
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={showEscalateDialog} onOpenChange={setShowEscalateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Escalate to HOD</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="escalation-reason">Reason for escalation</Label>
+            <Textarea
+              id="escalation-reason"
+              rows={4}
+              value={escalationReason}
+              onChange={(e) => setEscalationReason(e.target.value)}
+              placeholder="E.g. Issue exceeds department authority, involves a lecturer, or requires HOD intervention."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowEscalateDialog(false)} disabled={escalating}>Cancel</Button>
+            <Button onClick={handleEscalate} disabled={escalating || escalationReason.trim().length < 3}>
+              {escalating ? "Escalating..." : "Escalate"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
 
       {/* Admin status workflow */}
