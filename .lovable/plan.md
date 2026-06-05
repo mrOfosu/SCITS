@@ -1,79 +1,81 @@
+# Level 9 — Department Escalation System
 
-# GCTU Core System Refactor — Plan
+A focused, additive build that layers escalation on top of the existing routing, RLS, dashboards, notifications, and Kwame AI without breaking them.
 
-A large, multi-phase refactor of the database, role system, complaint model, routing, and UI. Existing auth, Kwame AI, notifications, attachments, and realtime will continue to work.
+## Escalation Model
+Student → Department Admin → HOD. HOD is the final authority within a department. Super Admin remains system/analytics only and is not part of the complaint escalation chain.
 
-## Phase 1 — Database Schema (Migration #1: structure)
+## Database Changes (one migration)
 
-New tables:
-- `faculties` (id, faculty_name, faculty_code unique, description, created_at)
-- `departments` (id, faculty_id FK, department_name, department_code, description, hod_name, department_email, is_active, created_at)
-- `complaint_categories` (id, name, code) — Academic, Technical, Administrative, Facilities & Welfare
-- `complaint_types` (id, category_id FK, name, code, default_priority, default_department_code) — used for routing
-- `department_admins` (id, user_id, department_id) — links staff to departments
+Add to `complaints`:
+- `escalated_at timestamptz`
+- `escalated_by uuid`
+- `escalation_reason text`
+- `current_handler_id uuid`
+- `current_handler_role text` (`department_admin` | `hod`)
+- (reuse existing `escalation_level int`; 0 = dept admin, 1 = HOD)
 
-Extend `app_role` enum: add `department_admin`, `hod`, `faculty_admin`, `super_admin` (keep existing `admin` as alias for super_admin during migration).
+New table `complaint_escalations`:
+- `id`, `complaint_id`, `previous_handler_id`, `previous_handler_role`, `new_handler_id`, `new_handler_role`, `escalation_reason`, `escalated_by`, `created_at`
+- RLS: scoped read for complaint owner + dept staff + HOD + super admin; insert via security-definer function only.
+- GRANT select/insert to `authenticated`, all to `service_role`.
 
-Extend `profiles`:
-- faculty_id, department_id, staff_position, student_index_number, programme
-(`level`, `phone_number`, `full_name` already exist.)
+Helper: `is_hod_for(_user_id, _dept)` security-definer function.
 
-Extend `complaints`:
-- faculty_id, department_id, complaint_category_id, complaint_type_id
-- assigned_department_id, assigned_officer_id
-- escalation_level (int, default 0), academic_year, semester
-- resolved_by, resolution_date
-(Existing `priority` and `status` enums kept; widen `priority` to include `critical`.)
+Trigger on new complaint: set `current_handler_role = 'department_admin'`, pick a `current_handler_id` (first dept admin in assigned department).
 
-Upgrade `generate_complaint_reference()` to emit `FACULTY-DEPT-YYYY-NNN` using faculty/department codes; fallback to `CMP-YYYY-NNN` if missing.
+Function `escalate_complaint(complaint_id, reason, escalated_by)`:
+- Find HOD of the complaint's assigned department.
+- Update complaint: `escalation_level=1`, `current_handler_role='hod'`, `current_handler_id=<hod>`, `escalated_at=now()`, `escalated_by`, `escalation_reason`.
+- Insert row in `complaint_escalations`.
+- Insert notifications for HOD + student.
+- Insert `complaint_activity` entry (`action_type='escalated'`).
 
-## Phase 2 — Seed Data (Migration #2: data)
-Insert 4 faculties, all listed departments, all categories, and all complaint types with default routing department codes and priorities.
+## Auto-Escalation (3 days)
+New edge function `auto-escalate-complaints` (scheduled via pg_cron every hour):
+- Select complaints where `status IN ('pending','in_review')` AND `escalation_level = 0` AND `created_at < now() - interval '3 days'`.
+- Call `escalate_complaint(...)` with reason "Auto-escalated: no resolution within 3 days".
 
-## Phase 3 — Smart Routing
-DB trigger `route_complaint_on_insert`:
-- Resolves `assigned_department_id` from `complaint_type.default_department_code` within the student's faculty.
-- Falls back to selected `department_id`, then any matching dept across faculties.
-- Sets `priority` from `complaint_type.default_priority` if not provided.
+## Manual Escalation
+- Edge function `escalate-complaint` (or direct RPC) called from UI.
+- Department Admin sees "Escalate to HOD" button on `ComplaintDetail` (visible only when `current_handler_role='department_admin'` and user is dept staff).
+- Dialog asks for required reason → calls RPC.
 
-## Phase 4 — RLS Rewrite
-Helper functions (SECURITY DEFINER):
-- `get_user_department(uuid)`, `get_user_faculty(uuid)`, `is_super_admin(uuid)`, `is_faculty_admin_of(uuid, faculty)`, `is_dept_admin_of(uuid, dept)`.
+## RLS Updates
+Extend existing scoped policies so HOD users (`has_role('hod')` AND HOD of the complaint's department) can SELECT/UPDATE complaints and INSERT responses. `is_dept_staff_for` already covers HOD role — verify and keep.
 
-`complaints` policies:
-- SELECT: owner OR super_admin OR dept_admin/hod of `assigned_department_id` OR faculty_admin of `faculty_id`.
-- UPDATE: owner (limited), assigned dept staff, faculty_admin, super_admin.
-- INSERT: authenticated, `auth.uid()=user_id`.
-- DELETE: super_admin only (plus existing 7-day self-delete after resolved).
+## UI Changes
 
-Mirror scoping on `complaint_responses`, `complaint_activity`, `notifications`.
+`ComplaintTimeline.tsx` (new): visual vertical timeline built from `complaint_activity` + `complaint_escalations` (Submitted → Assigned → Responses → Escalated → Resolved). Rendered on `ComplaintDetail` for everyone.
 
-Existing `has_role(uid,'admin')` calls remain valid because `admin` stays mapped to super_admin.
+`ComplaintDetail.tsx`:
+- Show current handler + role badge.
+- Escalation banner if `escalation_level=1`.
+- "Escalate to HOD" button for dept admins with reason dialog.
+- Replace/augment existing ActivityLog with new ComplaintTimeline.
 
-## Phase 5 — Frontend Changes (minimal scope per request)
-- **SubmitComplaint**: replace category/sub-category UI with cascading selects → Faculty → Department → Main Category → Complaint Type → Academic Year + Semester. Auto-fill faculty/department from profile when present.
-- **CompleteProfile**: add Faculty + Department + Programme fields.
-- **useAuth**: extend to expose `role` (highest of the new roles) instead of just `isAdmin`. Keep `isAdmin` as `role === 'super_admin' || legacy admin`.
-- **AdminSidebar / routes**: gate by role. Add a department-scoped view for `department_admin` and `hod`. Super admin keeps full access.
-- **AdminComplaints / AdminDashboard**: filter queries by assigned_department_id when user is dept_admin/hod; by faculty when faculty_admin.
-- **NotificationBell / triggers**: update `notify_admins_on_new_complaint` to notify only members of `assigned_department_id` (+ super admins) instead of every admin.
+`StudentDashboard` / complaint cards:
+- Show Assigned Department, Current Handler name + role, Escalation status + date.
 
-Realtime channels and Kwame AI untouched (still subscribe to `complaints`/`notifications`).
+`AdminDashboard` (HOD view):
+- When current user has `hod` role, add widgets: Escalated to me, Pending, Resolved, Avg resolution time, top complaint types — scoped to their department.
+- Dept admin view stays as-is, filtered by their department (already works via RLS).
 
-## Phase 6 — Keep working
-- Existing complaints get NULL faculty/department/type — UI handles gracefully (shows legacy `category`).
-- Legacy `category` and `sub_category` columns are kept for backwards compatibility but no longer required.
-- Storage bucket, attachments flow, AI summary edge function unchanged.
+## Notifications
+`escalate_complaint` inserts notifications for HOD ("Complaint escalated to you") and student ("Your complaint has been escalated to the HOD"). Existing realtime notification bell picks them up.
 
-## Technical notes
-- All schema changes in ONE migration (Phase 1) to keep types.ts regen consistent; data seed in a second migration.
-- New role enum values appended at the end to avoid Postgres enum reorder issues.
-- A small `bootstrap_super_admin` migration assigns `super_admin` to current `admin` users.
-- No file paths or component-by-component diffs in this plan — implementation will follow the patterns already in `useAuth.tsx`, `AdminLayout.tsx`, `SubmitComplaint.tsx`.
+## Realtime
+Add `complaints` and `complaint_escalations` to `supabase_realtime` publication. Subscribe in `ComplaintDetail` and dashboards to refetch on changes.
 
-## Out of scope
-- Visual redesign of unrelated pages.
-- Changes to Kwame chatbot logic.
-- Email template rewrites (existing edge functions keep working; recipients change via trigger).
+## Kwame AI
+Update `student-chat` edge function system prompt + context loader to include complaint `escalation_level`, `current_handler_role`, `escalated_at`, age. Add canned guidance for: overdue/eligible-for-escalation, currently-escalated, resolved.
 
-Approve to proceed with Phase 1 migration.
+## What does NOT change
+Auth, profile completion, faculties/departments tables, existing complaint creation/routing trigger, email notifications, Kwame chat UI, existing realtime subscriptions, file uploads, PDF export.
+
+## Build order
+1. Migration (schema + RLS + helpers + triggers).
+2. Edge functions: `escalate-complaint`, `auto-escalate-complaints` + pg_cron schedule.
+3. UI: ComplaintTimeline, ComplaintDetail escalate button + handler banner, dashboard widgets, student card fields.
+4. Kwame context update.
+5. Realtime publication + client subscriptions.
