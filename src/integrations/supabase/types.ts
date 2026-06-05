@@ -111,6 +111,42 @@ export type Database = {
         }
         Relationships: []
       }
+      complaint_escalations: {
+        Row: {
+          complaint_id: string
+          created_at: string
+          escalated_by: string | null
+          escalation_reason: string
+          id: string
+          new_handler_id: string | null
+          new_handler_role: string
+          previous_handler_id: string | null
+          previous_handler_role: string | null
+        }
+        Insert: {
+          complaint_id: string
+          created_at?: string
+          escalated_by?: string | null
+          escalation_reason: string
+          id?: string
+          new_handler_id?: string | null
+          new_handler_role: string
+          previous_handler_id?: string | null
+          previous_handler_role?: string | null
+        }
+        Update: {
+          complaint_id?: string
+          created_at?: string
+          escalated_by?: string | null
+          escalation_reason?: string
+          id?: string
+          new_handler_id?: string | null
+          new_handler_role?: string
+          previous_handler_id?: string | null
+          previous_handler_role?: string | null
+        }
+        Relationships: []
+      }
       complaint_feedback: {
         Row: {
           complaint_id: string
@@ -225,9 +261,14 @@ export type Database = {
           complaint_category_id: string | null
           complaint_type_id: string | null
           created_at: string
+          current_handler_id: string | null
+          current_handler_role: string | null
           department_id: string | null
           description: string
+          escalated_at: string | null
+          escalated_by: string | null
           escalation_level: number
+          escalation_reason: string | null
           estimated_resolution_hours: number | null
           faculty_id: string | null
           has_new_updates: boolean
@@ -256,9 +297,14 @@ export type Database = {
           complaint_category_id?: string | null
           complaint_type_id?: string | null
           created_at?: string
+          current_handler_id?: string | null
+          current_handler_role?: string | null
           department_id?: string | null
           description: string
+          escalated_at?: string | null
+          escalated_by?: string | null
           escalation_level?: number
+          escalation_reason?: string | null
           estimated_resolution_hours?: number | null
           faculty_id?: string | null
           has_new_updates?: boolean
@@ -287,9 +333,14 @@ export type Database = {
           complaint_category_id?: string | null
           complaint_type_id?: string | null
           created_at?: string
+          current_handler_id?: string | null
+          current_handler_role?: string | null
           department_id?: string | null
           description?: string
+          escalated_at?: string | null
+          escalated_by?: string | null
           escalation_level?: number
+          escalation_reason?: string | null
           estimated_resolution_hours?: number | null
           faculty_id?: string | null
           has_new_updates?: boolean
@@ -637,6 +688,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      escalate_complaint: {
+        Args: { _complaint_id: string; _reason: string }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -650,6 +705,10 @@ export type Database = {
       }
       is_faculty_admin_for: {
         Args: { _faculty: string; _user_id: string }
+        Returns: boolean
+      }
+      is_hod_for: {
+        Args: { _dept: string; _user_id: string }
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
