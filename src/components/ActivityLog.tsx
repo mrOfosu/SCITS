@@ -49,9 +49,10 @@ export default function ActivityLog({ activity }: ActivityLogProps) {
   return (
     <div className="space-y-3">
       <h3 className="flex items-center gap-1.5 font-semibold">
-        <History className="h-4 w-4" /> Activity History
+        <History className="h-4 w-4" /> Complaint Timeline
       </h3>
-      <div className="space-y-2">
+      <div className="relative space-y-2 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-border">
+
         {activity.map((a) => {
           const Icon = actionIcons[a.action_type] || FileText;
           const label = actionLabels[a.action_type] || a.action_type;
