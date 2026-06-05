@@ -90,6 +90,11 @@ export default function ActivityLog({ activity }: ActivityLogProps) {
                     "{(a.new_value as Record<string, string>).message_preview}..."
                   </p>
                 )}
+                {a.action_type === "escalated" && a.new_value && (
+                  <p className="pt-1 text-xs text-muted-foreground italic">
+                    Reason: {(a.new_value as Record<string, string>).reason}
+                  </p>
+                )}
               </div>
             </div>
           );
