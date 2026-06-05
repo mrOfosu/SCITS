@@ -466,6 +466,33 @@ export default function ComplaintDetail() {
             )}
           </div>
 
+          {/* Handler / Escalation status */}
+          {(() => {
+            const c = complaint as unknown as { current_handler_role: string | null; escalation_level: number | null; escalated_at: string | null; escalation_reason: string | null };
+            const role = c.current_handler_role;
+            const escalated = (c.escalation_level || 0) >= 1;
+            return (
+              <div className={`rounded-md border p-3 text-sm ${escalated ? "border-amber-500/30 bg-amber-500/5" : "bg-muted/30"}`}>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {escalated ? <TrendingUp className="h-4 w-4 text-amber-600" /> : <Shield className="h-4 w-4 text-muted-foreground" />}
+                  <span className="font-medium">Current Handler:</span>
+                  <span>{currentHandler || "Unassigned"}</span>
+                  {role && (
+                    <Badge variant={escalated ? "default" : "outline"} className="capitalize">
+                      {role.replace("_", " ")}
+                    </Badge>
+                  )}
+                </div>
+                {escalated && c.escalated_at && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Escalated to HOD {timeAgo(c.escalated_at)}{c.escalation_reason ? ` — ${c.escalation_reason}` : ""}
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+
+
           <p className="whitespace-pre-wrap text-sm">{complaint.description}</p>
           {complaint.attachment_url && (
             <AttachmentPreview attachmentUrl={complaint.attachment_url} />
