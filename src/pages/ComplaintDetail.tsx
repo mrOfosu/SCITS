@@ -111,6 +111,11 @@ export default function ComplaintDetail() {
   const [bookmarked, setBookmarked] = useState(false);
   const [feedback, setFeedback] = useState<boolean | null | undefined>(undefined);
   const [assignedAdmin, setAssignedAdmin] = useState<string | null>(null);
+  const [currentHandler, setCurrentHandler] = useState<string | null>(null);
+  const [showEscalateDialog, setShowEscalateDialog] = useState(false);
+  const [escalationReason, setEscalationReason] = useState("");
+  const [escalating, setEscalating] = useState(false);
+  const [myRoles, setMyRoles] = useState<string[]>([]);
 
   const fetchData = useCallback(async () => {
     if (!id || !user) return;
