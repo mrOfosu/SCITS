@@ -137,6 +137,25 @@ export default function ComplaintDetail() {
       setAssignedAdmin(adminProfile?.display_name || null);
     }
 
+    // Fetch current handler name
+    if (comp && comp.current_handler_id) {
+      const { data: handlerProfile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("id", comp.current_handler_id)
+        .maybeSingle();
+      setCurrentHandler(handlerProfile?.display_name || null);
+    } else {
+      setCurrentHandler(null);
+    }
+
+    // Fetch my roles (for escalate button visibility)
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+    setMyRoles((roles || []).map((r) => r.role));
+
     const { data: resp } = await supabase
       .from("complaint_responses")
       .select("id, message, created_at, responder_id")
