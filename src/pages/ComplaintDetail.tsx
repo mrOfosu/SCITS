@@ -582,6 +582,45 @@ export default function ComplaintDetail() {
       )}
 
 
+      {/* Escalate to HOD (department admin only, not yet escalated, not resolved/closed) */}
+      {isAdmin && myRoles.includes("department_admin") && (complaint as any).escalation_level === 0 && complaint.status !== "resolved" && complaint.status !== "closed" && (
+        <Card>
+          <CardContent className="flex items-center justify-between gap-3 p-4">
+            <div>
+              <p className="text-sm font-medium">Need higher review?</p>
+              <p className="text-xs text-muted-foreground">Escalate this complaint to the Head of Department.</p>
+            </div>
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowEscalateDialog(true)}>
+              <TrendingUp className="h-4 w-4" /> Escalate to HOD
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={showEscalateDialog} onOpenChange={setShowEscalateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Escalate to HOD</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="escalation-reason">Reason for escalation</Label>
+            <Textarea
+              id="escalation-reason"
+              rows={4}
+              value={escalationReason}
+              onChange={(e) => setEscalationReason(e.target.value)}
+              placeholder="E.g. Issue exceeds department authority, involves a lecturer, or requires HOD intervention."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowEscalateDialog(false)} disabled={escalating}>Cancel</Button>
+            <Button onClick={handleEscalate} disabled={escalating || escalationReason.trim().length < 3}>
+              {escalating ? "Escalating..." : "Escalate"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Admin status workflow */}
       {isAdmin && nextStatus && (
