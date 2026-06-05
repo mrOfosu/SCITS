@@ -224,6 +224,20 @@ export default function ComplaintDetail() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Realtime: refresh on complaint, response, activity, or escalation changes
+  useEffect(() => {
+    if (!id) return;
+    const channel = supabase
+      .channel(`complaint-${id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaints", filter: `id=eq.${id}` }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaint_responses", filter: `complaint_id=eq.${id}` }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaint_activity", filter: `complaint_id=eq.${id}` }, () => fetchData())
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaint_escalations", filter: `complaint_id=eq.${id}` }, () => fetchData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [id, fetchData]);
+
+
   useEffect(() => {
     if (!isAdmin || !complaint) return;
     if (complaint.ai_summary) {
