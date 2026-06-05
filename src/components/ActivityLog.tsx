@@ -31,6 +31,7 @@ const actionIcons: Record<string, typeof History> = {
   response_added: MessageSquare,
   complaint_edited: PenLine,
   complaint_deleted: Trash2,
+  escalated: TrendingUp,
 };
 
 const actionLabels: Record<string, string> = {
@@ -39,6 +40,7 @@ const actionLabels: Record<string, string> = {
   response_added: "Response Added",
   complaint_edited: "Complaint Edited",
   complaint_deleted: "Complaint Deleted",
+  escalated: "Escalated to HOD",
 };
 
 export default function ActivityLog({ activity }: ActivityLogProps) {
