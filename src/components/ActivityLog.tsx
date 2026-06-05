@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, History, FileText, MessageSquare, PenLine, Trash2, Plus } from "lucide-react";
+import { ArrowRight, History, FileText, MessageSquare, PenLine, Trash2, Plus, TrendingUp } from "lucide-react";
 
 interface ActivityEntry {
   id: string;
