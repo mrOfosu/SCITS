@@ -335,6 +335,25 @@ export default function ComplaintDetail() {
     }
   };
 
+  const handleEscalate = async () => {
+    if (!id || escalationReason.trim().length < 3) {
+      toast({ title: "Reason required", description: "Please provide a reason (3+ chars).", variant: "destructive" });
+      return;
+    }
+    setEscalating(true);
+    const { error } = await supabase.rpc("escalate_complaint", { _complaint_id: id, _reason: escalationReason.trim() });
+    if (error) {
+      toast({ title: "Escalation failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Escalated to HOD", description: "The Head of Department has been notified." });
+      setShowEscalateDialog(false);
+      setEscalationReason("");
+      fetchData();
+    }
+    setEscalating(false);
+  };
+
+
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
   if (!complaint) return <div className="py-12 text-center text-muted-foreground">Complaint not found.</div>;
 
