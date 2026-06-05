@@ -158,6 +158,9 @@ export default function StudentDashboard() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 sm:ml-4 flex-wrap">
+                      {((c as any).escalation_level || 0) >= 1 && (
+                        <Badge variant="default" className="bg-amber-500 hover:bg-amber-500">Escalated to HOD</Badge>
+                      )}
                       <Badge variant={priorityConfig[c.priority]?.variant || "outline"} className="transition-transform group-hover:scale-105">
                         {priorityConfig[c.priority]?.label || c.priority}
                       </Badge>
