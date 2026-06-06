@@ -583,7 +583,7 @@ export default function ComplaintDetail() {
 
 
       {/* Escalate to HOD (department admin only, not yet escalated, not resolved/closed) */}
-      {isAdmin && myRoles.includes("department_admin") && (complaint as any).escalation_level === 0 && complaint.status !== "resolved" && complaint.status !== "closed" && (
+      {isAdmin && (myRoles.includes("department_admin") || myRoles.includes("faculty_admin") || myRoles.includes("admin") || myRoles.includes("super_admin")) && (complaint as any).escalation_level === 0 && complaint.status !== "resolved" && complaint.status !== "closed" && (
         <Card>
           <CardContent className="flex items-center justify-between gap-3 p-4">
             <div>
