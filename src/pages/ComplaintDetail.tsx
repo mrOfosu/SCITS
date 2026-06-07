@@ -85,6 +85,7 @@ const nextStatusMap: Record<string, ComplaintStatus | null> = {
   in_review: "resolved",
   resolved: "closed",
   closed: null,
+  rejected: null,
 };
 
 const transitionLabels: Record<string, string> = {
