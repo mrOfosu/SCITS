@@ -67,10 +67,11 @@ export default function AdminDashboard() {
       total: complaints.length,
       pending: complaints.filter((c) => c.status === "pending").length,
       in_review: complaints.filter((c) => c.status === "in_review").length,
-      resolved: complaints.filter((c) => c.status === "resolved").length,
+      resolved: complaints.filter((c) => c.status === "resolved" || c.status === "closed").length,
       closed: complaints.filter((c) => c.status === "closed").length,
+      rejected: complaints.filter((c) => c.status === "rejected").length,
       overdue: complaints.filter((c) => {
-        if (c.status === "resolved" || c.status === "closed") return false;
+        if (c.status === "resolved" || c.status === "closed" || c.status === "rejected") return false;
         const created = new Date(c.created_at);
         return (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24) > overdueDays;
       }).length,
