@@ -17,6 +17,7 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   in_review: { label: "In Review", variant: "default" },
   resolved: { label: "Resolved", variant: "secondary" },
   closed: { label: "Closed", variant: "outline" },
+  rejected: { label: "Rejected", variant: "destructive" },
 };
 
 const priorityConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
