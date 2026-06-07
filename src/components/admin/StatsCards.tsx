@@ -1,8 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Clock, CheckCircle2, XCircle, FileText, AlertTriangle, Timer } from "lucide-react";
+import { AlertCircle, Clock, CheckCircle2, XCircle, FileText, AlertTriangle, Timer, Ban } from "lucide-react";
 
 interface StatsCardsProps {
-  counts: { total: number; pending: number; in_review: number; resolved: number; closed: number; overdue: number };
+  counts: { total: number; pending: number; in_review: number; resolved: number; closed: number; overdue: number; rejected?: number };
   avgResolutionDays: number | null;
 }
 
@@ -13,12 +13,13 @@ export default function StatsCards({ counts, avgResolutionDays }: StatsCardsProp
     { label: "In Review", value: counts.in_review, icon: Clock, color: "text-primary" },
     { label: "Resolved", value: counts.resolved, icon: CheckCircle2, color: "text-muted-foreground" },
     { label: "Closed", value: counts.closed, icon: XCircle, color: "text-muted-foreground/50" },
+    { label: "Rejected", value: counts.rejected ?? 0, icon: Ban, color: "text-destructive" },
     { label: "Overdue", value: counts.overdue, icon: AlertTriangle, color: "text-destructive" },
     { label: "Avg Resolution", value: avgResolutionDays !== null ? `${avgResolutionDays}d` : "—", icon: Timer, color: "text-primary" },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7">
+    <div className="grid grid-cols-2 gap-2.5 sm:gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8">
       {stats.map((s) => (
         <Card key={s.label}>
           <CardContent className="flex items-center gap-2.5 sm:gap-3 p-3 sm:p-4">
