@@ -116,6 +116,9 @@ export default function ComplaintDetail() {
   const [showEscalateDialog, setShowEscalateDialog] = useState(false);
   const [escalationReason, setEscalationReason] = useState("");
   const [escalating, setEscalating] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejecting, setRejecting] = useState(false);
   const [myRoles, setMyRoles] = useState<string[]>([]);
 
   const fetchData = useCallback(async () => {
