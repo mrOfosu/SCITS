@@ -358,6 +358,27 @@ export default function ComplaintDetail() {
     setEscalating(false);
   };
 
+  const handleReject = async () => {
+    if (!id || rejectionReason.trim().length < 3) {
+      toast({ title: "Reason required", description: "Please provide a rejection reason (3+ chars).", variant: "destructive" });
+      return;
+    }
+    setRejecting(true);
+    const { error } = await supabase
+      .from("complaints")
+      .update({ status: "rejected" as ComplaintStatus, rejection_reason: rejectionReason.trim() })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Rejection failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Complaint rejected", description: "The student has been notified." });
+      setShowRejectDialog(false);
+      setRejectionReason("");
+      fetchData();
+    }
+    setRejecting(false);
+  };
+
 
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
   if (!complaint) return <div className="py-12 text-center text-muted-foreground">Complaint not found.</div>;
