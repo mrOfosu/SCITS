@@ -518,6 +518,20 @@ export default function ComplaintDetail() {
             );
           })()}
 
+          {/* Rejection reason banner */}
+          {complaint.status === "rejected" && (complaint as any).rejection_reason && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant="destructive">Rejected</Badge>
+                {(complaint as any).rejected_at && (
+                  <span className="text-xs text-muted-foreground">{timeAgo((complaint as any).rejected_at)}</span>
+                )}
+              </div>
+              <p className="text-sm"><span className="font-medium">Reason: </span>{(complaint as any).rejection_reason}</p>
+            </div>
+          )}
+
+
 
           <p className="whitespace-pre-wrap text-sm">{complaint.description}</p>
           {complaint.attachment_url && (
