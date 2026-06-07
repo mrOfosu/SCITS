@@ -77,6 +77,7 @@ export default function AdminFilters({ filters, onChange, departments }: AdminFi
             <SelectItem value="in_review">In Review</SelectItem>
             <SelectItem value="resolved">Resolved</SelectItem>
             <SelectItem value="closed">Closed</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filters.category} onValueChange={(v) => set({ category: v })}>

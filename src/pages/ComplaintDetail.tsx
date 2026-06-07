@@ -64,6 +64,7 @@ const statusConfig: Record<string, { label: string; variant: "default" | "second
   in_review: { label: "In Review", variant: "default" },
   resolved: { label: "Resolved", variant: "secondary" },
   closed: { label: "Closed", variant: "outline" },
+  rejected: { label: "Rejected", variant: "destructive" },
 };
 
 const priorityConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -84,6 +85,7 @@ const nextStatusMap: Record<string, ComplaintStatus | null> = {
   in_review: "resolved",
   resolved: "closed",
   closed: null,
+  rejected: null,
 };
 
 const transitionLabels: Record<string, string> = {
@@ -115,6 +117,9 @@ export default function ComplaintDetail() {
   const [showEscalateDialog, setShowEscalateDialog] = useState(false);
   const [escalationReason, setEscalationReason] = useState("");
   const [escalating, setEscalating] = useState(false);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejecting, setRejecting] = useState(false);
   const [myRoles, setMyRoles] = useState<string[]>([]);
 
   const fetchData = useCallback(async () => {
@@ -353,6 +358,27 @@ export default function ComplaintDetail() {
     setEscalating(false);
   };
 
+  const handleReject = async () => {
+    if (!id || rejectionReason.trim().length < 3) {
+      toast({ title: "Reason required", description: "Please provide a rejection reason (3+ chars).", variant: "destructive" });
+      return;
+    }
+    setRejecting(true);
+    const { error } = await supabase
+      .from("complaints")
+      .update({ status: "rejected" as ComplaintStatus, rejection_reason: rejectionReason.trim() })
+      .eq("id", id);
+    if (error) {
+      toast({ title: "Rejection failed", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Complaint rejected", description: "The student has been notified." });
+      setShowRejectDialog(false);
+      setRejectionReason("");
+      fetchData();
+    }
+    setRejecting(false);
+  };
+
 
   if (loading) return <div className="py-12 text-center text-muted-foreground">Loading...</div>;
   if (!complaint) return <div className="py-12 text-center text-muted-foreground">Complaint not found.</div>;
@@ -492,6 +518,20 @@ export default function ComplaintDetail() {
             );
           })()}
 
+          {/* Rejection reason banner */}
+          {complaint.status === "rejected" && (complaint as any).rejection_reason && (
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
+              <div className="flex items-center gap-2 mb-1">
+                <Badge variant="destructive">Rejected</Badge>
+                {(complaint as any).rejected_at && (
+                  <span className="text-xs text-muted-foreground">{timeAgo((complaint as any).rejected_at)}</span>
+                )}
+              </div>
+              <p className="text-sm"><span className="font-medium">Reason: </span>{(complaint as any).rejection_reason}</p>
+            </div>
+          )}
+
+
 
           <p className="whitespace-pre-wrap text-sm">{complaint.description}</p>
           {complaint.attachment_url && (
@@ -596,6 +636,46 @@ export default function ComplaintDetail() {
           </CardContent>
         </Card>
       )}
+
+      {/* Reject complaint (admin only, only when pending or in_review) */}
+      {isAdmin && (complaint.status === "pending" || complaint.status === "in_review") && (
+        <Card className="border-destructive/30">
+          <CardContent className="flex items-center justify-between gap-3 p-4">
+            <div>
+              <p className="text-sm font-medium">Reject this complaint</p>
+              <p className="text-xs text-muted-foreground">Decline with a reason. The student will be notified.</p>
+            </div>
+            <Button size="sm" variant="destructive" onClick={() => setShowRejectDialog(true)}>
+              Reject
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Complaint</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="rejection-reason">Reason for rejection</Label>
+            <Textarea
+              id="rejection-reason"
+              rows={4}
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Explain why this complaint is being rejected. The student will see this reason."
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowRejectDialog(false)} disabled={rejecting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleReject} disabled={rejecting || rejectionReason.trim().length < 3}>
+              {rejecting ? "Rejecting..." : "Reject Complaint"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       <Dialog open={showEscalateDialog} onOpenChange={setShowEscalateDialog}>
         <DialogContent>
