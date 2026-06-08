@@ -1,81 +1,60 @@
-# Level 9 — Department Escalation System
+# Update Methodology & System Specifications PDF
 
-A focused, additive build that layers escalation on top of the existing routing, RLS, dashboards, notifications, and Kwame AI without breaking them.
+Regenerate `/mnt/documents/Methodology_and_System_Specifications_v2.pdf` to align with the system's current state. Keep the existing structure, tone and formatting; only refresh the content that has changed.
 
-## Escalation Model
-Student → Department Admin → HOD. HOD is the final authority within a department. Super Admin remains system/analytics only and is not part of the complaint escalation chain.
+## What will change
 
-## Database Changes (one migration)
+### 1. Functional Requirements (Section 3.1)
+Add/revise entries to reflect new behaviour:
+- **FR-08 Status workflow:** add `Rejected` state — `Pending → In Review → Resolved → Closed`, with `Rejected` as a terminal branch requiring a reason.
+- **New FR — Complaint Rejection:** Admins (department, faculty, HOD, super) can reject a complaint with a mandatory reason; the student is notified with the reason and the rejected complaint appears on dashboards.
+- **New FR — Department-Based Escalation:** Unresolved complaints escalate from Department Admin to Head of Department (HOD). Faculty/Department admins can manually escalate with a reason.
+- **New FR — Auto-Escalation:** Complaints unresolved after 3 days are auto-escalated to the relevant HOD via a scheduled job.
+- **New FR — Escalation Timeline:** Students view full lifecycle (submission → assignment → responses → escalation → resolution/rejection) in realtime.
+- **FR-12 (Kwame AI):** restrict to student accounts only; AI features removed from all admin pages. Kwame is escalation-aware (overdue, escalated, resolved guidance).
+- **New FR — Realtime Updates:** Complaint status, handler and escalation changes propagate live to dashboards and detail pages.
 
-Add to `complaints`:
-- `escalated_at timestamptz`
-- `escalated_by uuid`
-- `escalation_reason text`
-- `current_handler_id uuid`
-- `current_handler_role text` (`department_admin` | `hod`)
-- (reuse existing `escalation_level int`; 0 = dept admin, 1 = HOD)
+### 2. User Roles (Section 3.8)
+Replace the two-role table with the actual hierarchy:
+- **Student** — submit, track, bookmark, give feedback, use Kwame AI.
+- **Department Admin** — handle complaints routed to their department; escalate to HOD; reject with reason.
+- **Faculty Admin / Faculty Head** — oversee complaints across departments in their faculty; escalate; reject.
+- **Head of Department (HOD)** — final authority for escalated complaints in their department.
+- **Super Admin** — system-wide configuration, analytics, user/role management (not part of complaint chain).
 
-New table `complaint_escalations`:
-- `id`, `complaint_id`, `previous_handler_id`, `previous_handler_role`, `new_handler_id`, `new_handler_role`, `escalation_reason`, `escalated_by`, `created_at`
-- RLS: scoped read for complaint owner + dept staff + HOD + super admin; insert via security-definer function only.
-- GRANT select/insert to `authenticated`, all to `service_role`.
+Note: Kwame AI is available to students only.
 
-Helper: `is_hod_for(_user_id, _dept)` security-definer function.
+### 3. Database Design (Section 3.6)
+Update table list to match current schema:
+- `profiles`, `user_roles` (with `app_role` enum: student, department_admin, faculty_admin, hod, super_admin)
+- `faculties`, `departments`, `department_staff` — institutional structure & staff assignments
+- `complaints` — adds `assigned_department_id`, `faculty_id`, `escalation_level`, `escalated_at`, `escalated_by`, `escalation_reason`, `current_handler_id`, `current_handler_role`, `rejection_reason`, `rejected_at`, `rejected_by`
+- `complaint_responses`, `complaint_activity` (audit trail), `complaint_escalations` (escalation history)
+- `notifications`, `bookmarks`, `feedback`
+- Security-definer helpers: `has_role`, `is_hod_for`, `is_dept_staff_for`, `escalate_complaint`
 
-Trigger on new complaint: set `current_handler_role = 'department_admin'`, pick a `current_handler_id` (first dept admin in assigned department).
+### 4. System Architecture (Section 3.5)
+Add a fourth bullet for **Scheduled Jobs**: `pg_cron` runs the `auto-escalate-complaints` edge function hourly; other edge functions cover auto-assignment, notifications, overdue checks, and Kwame chat.
 
-Function `escalate_complaint(complaint_id, reason, escalated_by)`:
-- Find HOD of the complaint's assigned department.
-- Update complaint: `escalation_level=1`, `current_handler_role='hod'`, `current_handler_id=<hod>`, `escalated_at=now()`, `escalated_by`, `escalation_reason`.
-- Insert row in `complaint_escalations`.
-- Insert notifications for HOD + student.
-- Insert `complaint_activity` entry (`action_type='escalated'`).
+### 5. Software Requirements (Section 3.4)
+Minor refresh:
+- Add **Framer Motion** (animations) and **Realtime** (Supabase Realtime channels).
+- Clarify AI Assistant row: "Lovable AI Gateway (Google Gemini) — student-facing only".
 
-## Auto-Escalation (3 days)
-New edge function `auto-escalate-complaints` (scheduled via pg_cron every hour):
-- Select complaints where `status IN ('pending','in_review')` AND `escalation_level = 0` AND `created_at < now() - interval '3 days'`.
-- Call `escalate_complaint(...)` with reason "Auto-escalated: no resolution within 3 days".
+### 6. Security Specifications (Section 3.7)
+Add:
+- Role escalation prevented via separate `user_roles` table + `has_role` SECURITY DEFINER function.
+- RLS policies scoped by department/faculty membership and current handler.
+- Escalation and rejection actions logged in `complaint_activity` and `complaint_escalations`.
 
-## Manual Escalation
-- Edge function `escalate-complaint` (or direct RPC) called from UI.
-- Department Admin sees "Escalate to HOD" button on `ComplaintDetail` (visible only when `current_handler_role='department_admin'` and user is dept staff).
-- Dialog asks for required reason → calls RPC.
+### 7. Cover page
+Bump **Version** to `2.0`, **Date** to `June 2026`.
 
-## RLS Updates
-Extend existing scoped policies so HOD users (`has_role('hod')` AND HOD of the complaint's department) can SELECT/UPDATE complaints and INSERT responses. `is_dept_staff_for` already covers HOD role — verify and keep.
+## Technical approach
+- Use the `docx` skill / `reportlab` (PDF skill) to regenerate the document with the existing visual style (titles, tables, bullet lists).
+- Save as `/mnt/documents/Methodology_and_System_Specifications_v2.pdf` (keep the original intact for comparison).
+- Run visual QA: convert each page to JPEG and inspect for layout/clipping issues before delivering.
 
-## UI Changes
-
-`ComplaintTimeline.tsx` (new): visual vertical timeline built from `complaint_activity` + `complaint_escalations` (Submitted → Assigned → Responses → Escalated → Resolved). Rendered on `ComplaintDetail` for everyone.
-
-`ComplaintDetail.tsx`:
-- Show current handler + role badge.
-- Escalation banner if `escalation_level=1`.
-- "Escalate to HOD" button for dept admins with reason dialog.
-- Replace/augment existing ActivityLog with new ComplaintTimeline.
-
-`StudentDashboard` / complaint cards:
-- Show Assigned Department, Current Handler name + role, Escalation status + date.
-
-`AdminDashboard` (HOD view):
-- When current user has `hod` role, add widgets: Escalated to me, Pending, Resolved, Avg resolution time, top complaint types — scoped to their department.
-- Dept admin view stays as-is, filtered by their department (already works via RLS).
-
-## Notifications
-`escalate_complaint` inserts notifications for HOD ("Complaint escalated to you") and student ("Your complaint has been escalated to the HOD"). Existing realtime notification bell picks them up.
-
-## Realtime
-Add `complaints` and `complaint_escalations` to `supabase_realtime` publication. Subscribe in `ComplaintDetail` and dashboards to refetch on changes.
-
-## Kwame AI
-Update `student-chat` edge function system prompt + context loader to include complaint `escalation_level`, `current_handler_role`, `escalated_at`, age. Add canned guidance for: overdue/eligible-for-escalation, currently-escalated, resolved.
-
-## What does NOT change
-Auth, profile completion, faculties/departments tables, existing complaint creation/routing trigger, email notifications, Kwame chat UI, existing realtime subscriptions, file uploads, PDF export.
-
-## Build order
-1. Migration (schema + RLS + helpers + triggers).
-2. Edge functions: `escalate-complaint`, `auto-escalate-complaints` + pg_cron schedule.
-3. UI: ComplaintTimeline, ComplaintDetail escalate button + handler banner, dashboard widgets, student card fields.
-4. Kwame context update.
-5. Realtime publication + client subscriptions.
+## Out of scope
+- No code or database changes.
+- No change to sections 1, 2 (methodology), 3.2 (non-functional), 3.3 (hardware), or 4 (conclusion) beyond minor wording.
