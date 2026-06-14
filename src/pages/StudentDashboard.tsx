@@ -122,53 +122,84 @@ export default function StudentDashboard() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {displayed.map((c, index) => {
             const hasUpdates = c.has_new_updates;
             const estHours = c.estimated_resolution_hours;
+            const isEscalated = ((c as any).escalation_level || 0) >= 1;
             return (
               <Link key={c.id} to={`/complaint/${c.id}`} className="block">
-                <Card className={`group transition-all duration-200 hover:shadow-md sm:hover:scale-[1.01] border hover:border-primary/20 animate-fade-in ${hasUpdates ? "border-l-2 border-l-primary" : ""}`} style={{ animationDelay: `${index * 100}ms` }}>
-                  <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4">
-                    <div className="space-y-2 flex-1 min-w-0">
-                      <div className="flex items-start gap-2">
+                <Card
+                  className={`group transition-all duration-200 hover:shadow-md border hover:border-primary/20 animate-fade-in overflow-hidden ${
+                    hasUpdates ? "ring-1 ring-primary/20" : ""
+                  } ${isEscalated ? "border-l-4 border-l-amber-500" : ""}`}
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <CardContent className="p-0">
+                    {/* Top bar: status strip */}
+                    <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         {hasUpdates && (
-                          <span className="h-2 w-2 mt-1.5 rounded-full bg-primary shrink-0" />
+                          <span className="h-2 w-2 rounded-full bg-primary shrink-0" title="New updates" />
                         )}
-                        <p className="font-medium text-foreground group-hover:text-primary transition-colors break-words flex-1 min-w-0">{c.subject}</p>
-                        <div className="flex items-center gap-1 shrink-0 mt-0.5">
-                          {c.attachment_url && <Paperclip className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary/70 transition-colors" />}
-                          {bookmarkedIds.has(c.id) && <BookmarkCheck className="h-3.5 w-3.5 text-primary" />}
-                        </div>
+                        <span className="font-mono text-[11px] text-muted-foreground shrink-0">
+                          {c.reference_id}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground flex-wrap">
-                        <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">{c.reference_id}</span>
-                        <span className="hidden sm:inline">·</span>
-                        <span>{categoryLabels[c.category]}</span>
-                        <span>·</span>
-                        <span>{timeAgo(c.updated_at)}</span>
-                        {estHours && c.status !== "closed" && c.status !== "resolved" && (
-                          <>
-                            <span>·</span>
-                            <span className="flex items-center gap-0.5">
-                              <Clock className="h-3 w-3" />
-                              {estimatedResolutionLabel(estHours)}
-                            </span>
-                          </>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {c.attachment_url && (
+                          <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
                         )}
+                        {bookmarkedIds.has(c.id) && (
+                          <BookmarkCheck className="h-3.5 w-3.5 text-primary" />
+                        )}
+                        <Badge
+                          variant={statusConfig[c.status].variant}
+                          className="text-[10px] px-1.5 py-0 h-5"
+                        >
+                          {statusConfig[c.status].label}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 sm:ml-4 flex-wrap">
-                      {((c as any).escalation_level || 0) >= 1 && (
-                        <Badge variant="default" className="bg-amber-500 hover:bg-amber-500">Escalated to HOD</Badge>
+
+                    {/* Title */}
+                    <div className="px-4 pb-1">
+                      <h3 className="text-[15px] font-semibold text-foreground group-hover:text-primary transition-colors leading-snug break-words">
+                        {c.subject}
+                      </h3>
+                    </div>
+
+                    {/* Meta row */}
+                    <div className="px-4 pb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <Badge
+                        variant={priorityConfig[c.priority]?.variant || "outline"}
+                        className="text-[10px] px-1.5 py-0 h-5 font-normal"
+                      >
+                        {priorityConfig[c.priority]?.label || c.priority} Priority
+                      </Badge>
+                      <span>{categoryLabels[c.category]}</span>
+                      <span className="hidden sm:inline text-border">|</span>
+                      <span>{timeAgo(c.updated_at)}</span>
+                      {estHours && c.status !== "closed" && c.status !== "resolved" && (
+                        <>
+                          <span className="hidden sm:inline text-border">|</span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {estimatedResolutionLabel(estHours)}
+                          </span>
+                        </>
                       )}
-                      <Badge variant={priorityConfig[c.priority]?.variant || "outline"} className="transition-transform group-hover:scale-105">
-                        {priorityConfig[c.priority]?.label || c.priority}
-                      </Badge>
-                      <Badge variant={statusConfig[c.status].variant} className="transition-transform group-hover:scale-105">
-                        {statusConfig[c.status].label}
-                      </Badge>
-                      <Eye className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors hidden sm:block ml-auto" />
+                      {isEscalated && (
+                        <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-[10px] px-1.5 py-0 h-5 font-normal">
+                          Escalated
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Bottom action hint */}
+                    <div className="px-4 py-2.5 bg-muted/30 border-t flex items-center justify-between text-xs text-muted-foreground group-hover:bg-muted/50 transition-colors">
+                      <span>Tap to view details</span>
+                      <Eye className="h-3.5 w-3.5" />
                     </div>
                   </CardContent>
                 </Card>

@@ -32,18 +32,18 @@ function StudentDetailCard({ userId, isAnonymous }: { userId: string; isAnonymou
   if (!profile) return null;
 
   return (
-    <div className="rounded-md border bg-muted/30 p-3 space-y-1">
+    <div className="rounded-md border bg-muted/30 p-3 space-y-2">
       <div className="flex items-center justify-between">
         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Student Details</h4>
         {isAnonymous && <Badge variant="outline" className="text-[10px]">Anonymous Submission</Badge>}
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-        <div><span className="text-muted-foreground">Name:</span> {profile.full_name || profile.display_name}</div>
-        <div><span className="text-muted-foreground">Student ID:</span> {profile.student_id || "—"}</div>
-        <div><span className="text-muted-foreground">Email:</span> {profile.email || "—"}</div>
-        <div><span className="text-muted-foreground">Department:</span> {profile.department || "—"}</div>
-        <div><span className="text-muted-foreground">Level:</span> {profile.level || "—"}</div>
-        <div><span className="text-muted-foreground">Phone:</span> {profile.phone_number || "—"}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+        <div className="min-w-0 break-words"><span className="text-muted-foreground">Name:</span> {profile.full_name || profile.display_name}</div>
+        <div className="min-w-0 break-words"><span className="text-muted-foreground">Student ID:</span> {profile.student_id || "—"}</div>
+        <div className="min-w-0 break-words"><span className="text-muted-foreground">Email:</span> {profile.email || "—"}</div>
+        <div className="min-w-0 break-words"><span className="text-muted-foreground">Department:</span> {profile.department || "—"}</div>
+        <div className="min-w-0 break-words"><span className="text-muted-foreground">Level:</span> {profile.level || "—"}</div>
+        <div className="min-w-0 break-words"><span className="text-muted-foreground">Phone:</span> {profile.phone_number || "—"}</div>
       </div>
     </div>
   );
