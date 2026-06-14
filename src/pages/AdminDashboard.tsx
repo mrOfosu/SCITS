@@ -6,8 +6,9 @@ import AdminCharts from "@/components/admin/AdminCharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, FileText, Download, Bell, Eye } from "lucide-react";
+import { ArrowRight, FileText, Download, Bell, Eye, AlertTriangle } from "lucide-react";
 import RoleGreeting from "@/components/RoleGreeting";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface ComplaintWithProfile {
   id: string;
