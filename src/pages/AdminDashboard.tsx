@@ -42,23 +42,37 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
+  const { user, role } = useAuth();
   const [complaints, setComplaints] = useState<ComplaintWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("complaints")
-      .select("*, profiles:user_id(display_name, full_name, student_id, department)")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setComplaints((data as unknown as ComplaintWithProfile[]) || []);
-        setLoading(false);
-      });
+    const load = () =>
+      supabase
+        .from("complaints")
+        .select("*, profiles:user_id(display_name, full_name, student_id, department)")
+        .order("created_at", { ascending: false })
+        .then(({ data }) => {
+          setComplaints((data as unknown as ComplaintWithProfile[]) || []);
+          setLoading(false);
+        });
+    load();
 
     // Fire-and-forget: check for overdue complaints and send admin notifications
     supabase.functions.invoke("check-overdue-complaints").then(({ error }) => {
       if (error) console.error("Overdue check failed:", error);
     });
+
+    // Realtime: refresh on any complaint change (insert/update/delete)
+    const channel = supabase
+      .channel("admin-dashboard-complaints")
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaints" }, () => load())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "complaint_escalations" }, () => load())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const counts = useMemo(() => {
