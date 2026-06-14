@@ -6,8 +6,9 @@ import AdminCharts from "@/components/admin/AdminCharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, FileText, Download, Bell, Eye } from "lucide-react";
+import { ArrowRight, FileText, Download, Bell, Eye, AlertTriangle } from "lucide-react";
 import RoleGreeting from "@/components/RoleGreeting";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface ComplaintWithProfile {
   id: string;
@@ -41,23 +42,37 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function AdminDashboard() {
+  const { user, role } = useAuth();
   const [complaints, setComplaints] = useState<ComplaintWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("complaints")
-      .select("*, profiles:user_id(display_name, full_name, student_id, department)")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setComplaints((data as unknown as ComplaintWithProfile[]) || []);
-        setLoading(false);
-      });
+    const load = () =>
+      supabase
+        .from("complaints")
+        .select("*, profiles:user_id(display_name, full_name, student_id, department)")
+        .order("created_at", { ascending: false })
+        .then(({ data }) => {
+          setComplaints((data as unknown as ComplaintWithProfile[]) || []);
+          setLoading(false);
+        });
+    load();
 
     // Fire-and-forget: check for overdue complaints and send admin notifications
     supabase.functions.invoke("check-overdue-complaints").then(({ error }) => {
       if (error) console.error("Overdue check failed:", error);
     });
+
+    // Realtime: refresh on any complaint change (insert/update/delete)
+    const channel = supabase
+      .channel("admin-dashboard-complaints")
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaints" }, () => load())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "complaint_escalations" }, () => load())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const counts = useMemo(() => {
@@ -122,6 +137,63 @@ export default function AdminDashboard() {
       <StatsCards counts={counts} avgResolutionDays={avgResolutionDays} />
 
       <AdminCharts complaints={complaints} />
+
+      {/* Escalated to HOD */}
+      {(role === "hod" || role === "super_admin" || role === "admin") && (() => {
+        const escalated = complaints.filter(
+          (c) =>
+            (c as any).escalation_level >= 1 &&
+            c.status !== "resolved" &&
+            c.status !== "closed" &&
+            c.status !== "rejected"
+        );
+        return (
+          <Card className="border-l-4 border-l-destructive">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+                Escalated Complaints
+                <Badge variant="destructive" className="ml-1">{escalated.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {escalated.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No escalated complaints awaiting your action.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {escalated.slice(0, 8).map((c) => (
+                    <Link
+                      key={c.id}
+                      to={`/admin/complaint/${c.id}`}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-l-2 border-l-destructive bg-destructive/5 p-3 transition-colors hover:bg-destructive/10"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start sm:items-center gap-2 flex-wrap">
+                          <span className="font-mono text-xs text-muted-foreground shrink-0">{c.reference_id || "—"}</span>
+                          <span className="text-sm font-medium break-words flex-1 min-w-0">{c.subject}</span>
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">Escalated</Badge>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground flex-wrap">
+                          <span className="truncate max-w-[140px] sm:max-w-none">{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</span>
+                          <span>·</span>
+                          <span>{categoryLabels[c.category] || c.category}</span>
+                          <span>·</span>
+                          <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <Badge variant={statusConfig[c.status]?.variant || "outline"} className="shrink-0 self-start sm:self-center sm:ml-2">
+                        {statusConfig[c.status]?.label || c.status}
+                      </Badge>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Recent Complaints */}
       <Card>
