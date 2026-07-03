@@ -1,14 +1,32 @@
 import { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import AdminFilters, { type Filters, defaultFilters } from "@/components/admin/AdminFilters";
 import ComplaintsTable from "@/components/admin/ComplaintsTable";
 import ExportButtons from "@/components/admin/ExportButtons";
 import type { ComplaintWithProfile } from "@/pages/AdminDashboard";
 
+const KNOWN_STATUSES = ["all", "pending", "in_review", "resolved", "closed", "rejected", "overdue"];
+
 export default function AdminComplaints() {
+  const [searchParams] = useSearchParams();
+  const initialStatus = searchParams.get("status") || "all";
   const [complaints, setComplaints] = useState<ComplaintWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState<Filters>(defaultFilters);
+  const [filters, setFilters] = useState<Filters>({
+    ...defaultFilters,
+    status: KNOWN_STATUSES.includes(initialStatus) && initialStatus !== "overdue" ? initialStatus : "all",
+  });
+  const [overdueOnly, setOverdueOnly] = useState(initialStatus === "overdue");
+
+  useEffect(() => {
+    const s = searchParams.get("status") || "all";
+    setOverdueOnly(s === "overdue");
+    setFilters((f) => ({
+      ...f,
+      status: KNOWN_STATUSES.includes(s) && s !== "overdue" ? s : "all",
+    }));
+  }, [searchParams]);
 
   useEffect(() => {
     supabase
@@ -28,7 +46,13 @@ export default function AdminComplaints() {
   }, [complaints]);
 
   const filtered = useMemo(() => {
+    const now = Date.now();
     return complaints.filter((c) => {
+      if (overdueOnly) {
+        if (c.status === "resolved" || c.status === "closed" || c.status === "rejected") return false;
+        const ageDays = (now - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24);
+        if (ageDays <= 7) return false;
+      }
       if (filters.status !== "all" && c.status !== filters.status) return false;
       if (filters.category !== "all" && c.category !== filters.category) return false;
       if (filters.priority !== "all" && c.priority !== filters.priority) return false;
@@ -51,7 +75,7 @@ export default function AdminComplaints() {
       }
       return true;
     });
-  }, [complaints, filters]);
+  }, [complaints, filters, overdueOnly]);
 
   if (loading) {
     return (
