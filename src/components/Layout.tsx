@@ -24,7 +24,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-200">
-        <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-2 px-3 sm:px-4">
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-3 sm:px-4">
           <Link to={isAdmin ? "/admin" : "/"} className="flex items-center gap-2 font-semibold hover:scale-105 transition-transform duration-200 min-w-0">
             <GraduationCap className="h-5 w-5 text-primary shrink-0" />
             <span className="hidden sm:inline truncate">Complaint Tracker</span>
