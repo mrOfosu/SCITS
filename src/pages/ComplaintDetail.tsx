@@ -390,7 +390,10 @@ export default function ComplaintDetail() {
   const resolvedAt = (complaint as unknown as { resolved_at: string | null }).resolved_at;
   const weekMs = 7 * 24 * 60 * 60 * 1000;
   const msSinceResolved = resolvedAt ? Date.now() - new Date(resolvedAt).getTime() : 0;
-  const canStudentDelete = isOwner && complaint.status === "resolved" && resolvedAt !== null && msSinceResolved >= weekMs;
+  const canDeleteAfterResolved = isOwner && complaint.status === "resolved" && resolvedAt !== null && msSinceResolved >= weekMs;
+  const canDeleteWhenClosed = isOwner && complaint.status === "closed";
+  const canStudentDelete = canDeleteAfterResolved || canDeleteWhenClosed;
+  const showStudentDeleteCard = isOwner && (complaint.status === "resolved" || complaint.status === "closed");
   const daysUntilDeletable = resolvedAt && msSinceResolved < weekMs
     ? Math.ceil((weekMs - msSinceResolved) / (24 * 60 * 60 * 1000))
     : 0;
