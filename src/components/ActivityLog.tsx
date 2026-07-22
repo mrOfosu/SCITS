@@ -51,7 +51,7 @@ export default function ActivityLog({ activity }: ActivityLogProps) {
       <h3 className="flex items-center gap-1.5 font-semibold">
         <History className="h-4 w-4" /> Complaint Timeline
       </h3>
-      <div className="relative space-y-2 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-border">
+      <div className="relative space-y-2">
 
         {activity.map((a) => {
           const Icon = actionIcons[a.action_type] || FileText;
