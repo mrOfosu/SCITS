@@ -17,7 +17,7 @@ const COLORS = [
   "hsl(222.2, 47.4%, 11.2%)",
   "hsl(215.4, 16.3%, 46.9%)",
   "hsl(0, 84.2%, 60.2%)",
-  "hsl(210, 40%, 96.1%)",
+  "hsl(142, 76%, 36%)",
 ];
 
 const categoryLabels: Record<string, string> = {
