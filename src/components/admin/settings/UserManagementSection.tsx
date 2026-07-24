@@ -201,9 +201,11 @@ export default function UserManagementSection() {
 
   if (!isSuperAdmin) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <Shield className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+      <Card className="shadow-elevation-sm">
+        <CardContent className="py-16 text-center">
+          <div className="mx-auto w-14 h-14 bg-secondary rounded-full flex items-center justify-center mb-4">
+            <Shield className="h-6 w-6 text-muted-foreground" />
+          </div>
           <p className="text-sm text-muted-foreground">Only Super Admins can manage user roles.</p>
         </CardContent>
       </Card>
@@ -211,18 +213,18 @@ export default function UserManagementSection() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-foreground">User & Role Management</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">User & Role Management</h2>
         <p className="text-sm text-muted-foreground">
           Assign roles and link staff to their faculty and department.
         </p>
       </div>
 
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <CardTitle className="text-base flex items-center gap-2">
+            <CardTitle className="text-base tracking-tight flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               All Users ({users.length})
             </CardTitle>
@@ -239,30 +241,34 @@ export default function UserManagementSection() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Loading users...</p>
+            <div className="space-y-2 py-2">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-11 rounded-md bg-muted/60 animate-pulse" />
+              ))}
+            </div>
           ) : (
             <div className="overflow-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Faculty</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="text-[11px] uppercase tracking-wider">Name</TableHead>
+                    <TableHead className="text-[11px] uppercase tracking-wider">Email</TableHead>
+                    <TableHead className="text-[11px] uppercase tracking-wider">Faculty</TableHead>
+                    <TableHead className="text-[11px] uppercase tracking-wider">Department</TableHead>
+                    <TableHead className="text-[11px] uppercase tracking-wider">Role</TableHead>
+                    <TableHead className="text-right text-[11px] uppercase tracking-wider">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground py-10">
                         No users found
                       </TableCell>
                     </TableRow>
                   ) : (
                     filtered.map((user) => (
-                      <TableRow key={user.id}>
+                      <TableRow key={user.id} className="transition-colors duration-150">
                         <TableCell className="font-medium">{user.display_name}</TableCell>
                         <TableCell className="text-muted-foreground">{user.email || "—"}</TableCell>
                         <TableCell className="text-sm">{facultyName(user.faculty_id)}</TableCell>

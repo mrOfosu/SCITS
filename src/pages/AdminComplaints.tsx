@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import AdminFilters, { type Filters, defaultFilters } from "@/components/admin/AdminFilters";
 import ComplaintsTable from "@/components/admin/ComplaintsTable";
@@ -72,22 +73,27 @@ export default function AdminComplaints() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="space-y-5"
+    >
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Complaints</h1>
-          <p className="text-muted-foreground">Manage and respond to student complaints</p>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Complaints</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage and respond to student complaints</p>
         </div>
         <ExportButtons complaints={filtered} />
       </div>
 
       <AdminFilters filters={filters} onChange={setFilters} departments={departments} />
 
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{filtered.length} complaint{filtered.length !== 1 ? "s" : ""}</p>
-      </div>
+      <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">
+        {filtered.length} complaint{filtered.length !== 1 ? "s" : ""}
+      </p>
 
       <ComplaintsTable complaints={filtered} />
-    </div>
+    </motion.div>
   );
 }

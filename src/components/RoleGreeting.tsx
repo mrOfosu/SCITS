@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useAuth, type AppRole } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   GraduationCap,
@@ -10,19 +10,18 @@ import {
   Building2,
   Landmark,
   UserCog,
-  User as UserIcon,
 } from "lucide-react";
 
 const ROLE_META: Record<
   AppRole,
-  { label: string; short: string; icon: React.ComponentType<{ className?: string }>; tone: string }
+  { label: string; short: string; icon: React.ComponentType<{ className?: string }> }
 > = {
-  super_admin: { label: "Super Admin", short: "Super Admin", icon: ShieldCheck, tone: "bg-primary/10 text-primary" },
-  admin: { label: "Administrator", short: "Admin", icon: ShieldCheck, tone: "bg-primary/10 text-primary" },
-  faculty_admin: { label: "Faculty Head", short: "Faculty", icon: Landmark, tone: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-  hod: { label: "Head of Department", short: "HOD", icon: UserCog, tone: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
-  department_admin: { label: "Department Admin", short: "Department", icon: Building2, tone: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
-  student: { label: "Student", short: "Student", icon: GraduationCap, tone: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+  super_admin: { label: "Super Admin", short: "Super Admin", icon: ShieldCheck },
+  admin: { label: "Administrator", short: "Admin", icon: ShieldCheck },
+  faculty_admin: { label: "Faculty Head", short: "Faculty", icon: Landmark },
+  hod: { label: "Head of Department", short: "HOD", icon: UserCog },
+  department_admin: { label: "Department Admin", short: "Department", icon: Building2 },
+  student: { label: "Student", short: "Student", icon: GraduationCap },
 };
 
 function timeOfDayGreeting() {
@@ -86,27 +85,30 @@ export default function RoleGreeting() {
   }
 
   return (
-    <Card className="border-l-4 border-l-primary animate-fade-in">
-      <CardContent className="flex flex-col sm:flex-row sm:items-center gap-3 p-4">
-        <div className={`h-11 w-11 rounded-full flex items-center justify-center shrink-0 ${meta.tone}`}>
-          <Icon className="h-5 w-5" />
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border bg-card p-4 shadow-elevation-sm"
+    >
+      <div className="h-11 w-11 rounded-full bg-secondary flex items-center justify-center shrink-0">
+        <Icon className="h-5 w-5 text-foreground" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h2 className="text-base sm:text-lg font-semibold tracking-tight truncate">
+            {timeOfDayGreeting()}, {name}
+          </h2>
+          <Badge variant="outline" className="text-[10px] uppercase tracking-wide font-medium">
+            {meta.short}
+          </Badge>
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-base sm:text-lg font-semibold truncate">
-              {timeOfDayGreeting()}, {name}
-            </h2>
-            <Badge variant="secondary" className="text-[10px] uppercase tracking-wide">
-              {meta.short}
-            </Badge>
-          </div>
-          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
-            {meta.label}
-            {position ? ` · ${position}` : ""}
-            {contextBits.length ? ` · ${contextBits.join(" · ")}` : ""}
-          </p>
-        </div>
-      </CardContent>
-    </Card>
+        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
+          {meta.label}
+          {position ? ` · ${position}` : ""}
+          {contextBits.length ? ` · ${contextBits.join(" · ")}` : ""}
+        </p>
+      </div>
+    </motion.div>
   );
 }

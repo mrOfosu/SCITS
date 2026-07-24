@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,107 +87,123 @@ export default function CategoriesSection() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-foreground">Complaint Categories</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Complaint Categories</h2>
           <p className="text-sm text-muted-foreground">Manage categories and subcategories</p>
         </div>
-        <Button onClick={() => setShowAdd(!showAdd)} size="sm">
+        <Button onClick={() => setShowAdd(!showAdd)} size="sm" className="rounded-full shrink-0">
           <Plus className="mr-1 h-4 w-4" /> Add Category
         </Button>
       </div>
 
-      {showAdd && (
-        <Card>
-          <CardContent className="pt-6 space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label>Category Name</Label>
-                <Input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="e.g. Bullying" />
-              </div>
-              <div className="space-y-2">
-                <Label>Default Priority</Label>
-                <Select value={newCatPriority} onValueChange={setNewCatPriority}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={addCategory} size="sm">Create</Button>
-              <Button onClick={() => setShowAdd(false)} size="sm" variant="outline">Cancel</Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      <div className="space-y-4">
-        {categories.map((cat) => (
-          <Card key={cat.id}>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Tags className="h-4 w-4 text-muted-foreground" />
-                  {cat.name}
-                  <Badge variant={priorityColor(cat.priority) as any} className="ml-2 text-xs">
-                    {cat.priority}
-                  </Badge>
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                  <Select value={cat.priority} onValueChange={(v) => updatePriority(cat.id, v)}>
-                    <SelectTrigger className="h-8 w-24 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => deleteCategory(cat.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+      <AnimatePresence>
+        {showAdd && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <Card className="shadow-elevation-sm">
+              <CardContent className="pt-6 space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Category Name</Label>
+                    <Input value={newCatName} onChange={e => setNewCatName(e.target.value)} placeholder="e.g. Bullying" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Default Priority</Label>
+                    <Select value={newCatPriority} onValueChange={setNewCatPriority}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {cat.subcategories.map(sub => (
-                  <Badge key={sub} variant="outline" className="flex items-center gap-1">
-                    {sub}
-                    <button onClick={() => removeSubcategory(cat.id, sub)} className="ml-1 hover:text-destructive">
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                ))}
-                {cat.subcategories.length === 0 && (
-                  <p className="text-xs text-muted-foreground italic">No subcategories</p>
-                )}
-              </div>
-              {editingId === cat.id ? (
                 <div className="flex gap-2">
-                  <Input
-                    value={newSubcat}
-                    onChange={e => setNewSubcat(e.target.value)}
-                    placeholder="Subcategory name"
-                    className="h-8 text-sm"
-                    onKeyDown={e => e.key === "Enter" && addSubcategory(cat.id)}
-                  />
-                  <Button size="sm" className="h-8" onClick={() => addSubcategory(cat.id)}>Add</Button>
-                  <Button size="sm" variant="outline" className="h-8" onClick={() => { setEditingId(null); setNewSubcat(""); }}>Done</Button>
+                  <Button onClick={addCategory} size="sm">Create</Button>
+                  <Button onClick={() => setShowAdd(false)} size="sm" variant="outline">Cancel</Button>
                 </div>
-              ) : (
-                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditingId(cat.id)}>
-                  <Plus className="mr-1 h-3 w-3" /> Add Subcategory
-                </Button>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="space-y-3">
+        {categories.map((cat, i) => (
+          <motion.div
+            key={cat.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: Math.min(i * 0.04, 0.24) }}
+          >
+            <Card className="shadow-elevation-sm">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <CardTitle className="text-base tracking-tight flex items-center gap-2">
+                    <Tags className="h-4 w-4 text-muted-foreground" />
+                    {cat.name}
+                    <Badge variant={priorityColor(cat.priority) as any} className="ml-1 text-xs">
+                      {cat.priority}
+                    </Badge>
+                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Select value={cat.priority} onValueChange={(v) => updatePriority(cat.id, v)}>
+                      <SelectTrigger className="h-8 w-24 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/5" onClick={() => deleteCategory(cat.id)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {cat.subcategories.map(sub => (
+                    <Badge key={sub} variant="outline" className="flex items-center gap-1">
+                      {sub}
+                      <button onClick={() => removeSubcategory(cat.id, sub)} className="ml-1 hover:text-destructive transition-colors duration-150">
+                        <X className="h-3 w-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                  {cat.subcategories.length === 0 && (
+                    <p className="text-xs text-muted-foreground italic">No subcategories</p>
+                  )}
+                </div>
+                {editingId === cat.id ? (
+                  <div className="flex gap-2">
+                    <Input
+                      value={newSubcat}
+                      onChange={e => setNewSubcat(e.target.value)}
+                      placeholder="Subcategory name"
+                      className="h-8 text-sm"
+                      onKeyDown={e => e.key === "Enter" && addSubcategory(cat.id)}
+                    />
+                    <Button size="sm" className="h-8" onClick={() => addSubcategory(cat.id)}>Add</Button>
+                    <Button size="sm" variant="outline" className="h-8" onClick={() => { setEditingId(null); setNewSubcat(""); }}>Done</Button>
+                  </div>
+                ) : (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setEditingId(cat.id)}>
+                    <Plus className="mr-1 h-3 w-3" /> Add Subcategory
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
       </div>
     </div>

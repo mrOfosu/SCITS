@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import StatsCards from "@/components/admin/StatsCards";
 import AdminCharts from "@/components/admin/AdminCharts";
@@ -127,10 +128,15 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="space-y-5 sm:space-y-6"
+    >
       <RoleGreeting />
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Dashboard</h1>
         <p className="text-sm sm:text-base text-muted-foreground">Overview of complaint analytics and trends</p>
       </div>
 
@@ -148,9 +154,9 @@ export default function AdminDashboard() {
             c.status !== "rejected"
         );
         return (
-          <Card className="border-l-4 border-l-destructive">
+          <Card className="border-l-4 border-l-destructive shadow-elevation-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-base flex items-center gap-2">
+              <CardTitle className="text-base tracking-tight flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-destructive" />
                 Escalated Complaints
                 <Badge variant="destructive" className="ml-1">{escalated.length}</Badge>
@@ -196,9 +202,9 @@ export default function AdminDashboard() {
       })()}
 
       {/* Recent Complaints */}
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base">Recent Complaints</CardTitle>
+          <CardTitle className="text-base tracking-tight">Recent Complaints</CardTitle>
           <Link to="/admin/complaints">
             <Button variant="outline" size="sm" className="gap-1.5">
               View All Complaints <ArrowRight className="h-3.5 w-3.5" />
@@ -249,9 +255,9 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Quick Actions */}
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">Quick Actions</CardTitle>
+          <CardTitle className="text-base tracking-tight">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2 sm:gap-3">
@@ -273,6 +279,6 @@ export default function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }

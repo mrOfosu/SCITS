@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,9 +33,9 @@ function StudentDetailCard({ userId, isAnonymous }: { userId: string; isAnonymou
   if (!profile) return null;
 
   return (
-    <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+    <div className="rounded-lg border bg-secondary/40 p-3.5 space-y-2">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Student Details</h4>
+        <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">Student Details</h4>
         {isAnonymous && <Badge variant="outline" className="text-[10px]">Anonymous Submission</Badge>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
@@ -409,34 +410,39 @@ export default function ComplaintDetail() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="mx-auto max-w-2xl space-y-5"
+    >
       {isAdmin && <AdminBreadcrumb />}
       <div className="flex items-center justify-between">
         {isAdmin ? (
-          <Button variant="ghost" size="sm" onClick={() => navigate("/admin/complaints")} className="gap-1.5">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/admin/complaints")} className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> Back to Complaints
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="gap-1.5">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <ComplaintPdfExport complaint={complaint} responses={responses} />
           {!isAdmin && (
             <Button variant="ghost" size="icon" onClick={toggleBookmark} className="h-8 w-8">
-              {bookmarked ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
+              {bookmarked ? <BookmarkCheck className="h-4 w-4 text-foreground" /> : <Bookmark className="h-4 w-4" />}
             </Button>
           )}
         </div>
       </div>
 
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <CardTitle>{complaint.subject}</CardTitle>
-              <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <CardTitle className="text-lg tracking-tight break-words">{complaint.subject}</CardTitle>
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                 {complaint.reference_id && (
                   <span className="font-mono text-xs font-medium text-foreground">{complaint.reference_id}</span>
                 )}
@@ -452,7 +458,7 @@ export default function ComplaintDetail() {
                 <span>{new Date(complaint.created_at).toLocaleDateString()}</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Badge variant={priorityConfig[complaint.priority]?.variant || "outline"}>
                 {priorityConfig[complaint.priority]?.label || complaint.priority}
               </Badge>
@@ -468,7 +474,7 @@ export default function ComplaintDetail() {
 
           {/* Anonymous badge for students */}
           {!isAdmin && complaint.is_anonymous && (
-            <div className="flex items-center gap-2 rounded-md border border-muted bg-muted/40 p-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 rounded-lg border bg-secondary/40 p-2.5 text-xs text-muted-foreground">
               <User className="h-3.5 w-3.5" />
               This complaint was submitted anonymously
             </div>
@@ -498,7 +504,7 @@ export default function ComplaintDetail() {
             const role = c.current_handler_role;
             const escalated = (c.escalation_level || 0) >= 1;
             return (
-              <div className={`rounded-md border p-3 text-sm ${escalated ? "border-amber-500/30 bg-amber-500/5" : "bg-muted/30"}`}>
+              <div className={`rounded-lg border p-3.5 text-sm ${escalated ? "border-amber-500/30 bg-amber-500/5" : "bg-secondary/40"}`}>
                 <div className="flex items-center gap-2 flex-wrap">
                   {escalated ? <TrendingUp className="h-4 w-4 text-amber-600" /> : <Shield className="h-4 w-4 text-muted-foreground" />}
                   <span className="font-medium">Current Handler:</span>
@@ -743,20 +749,27 @@ export default function ComplaintDetail() {
 
       {/* Responses */}
       <div className="space-y-3">
-        <h3 className="font-semibold">Responses</h3>
+        <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">Responses</h3>
         {responses.length === 0 ? (
           <p className="text-sm text-muted-foreground">No responses yet.</p>
         ) : (
-          responses.map((r) => (
-            <Card key={r.id}>
-              <CardContent className="p-4">
-                <div className="mb-1 flex items-center justify-between text-sm">
-                  <span className="font-medium">{r.profiles?.display_name || "Unknown"}</span>
-                  <span className="text-muted-foreground">{timeAgo(r.created_at)}</span>
-                </div>
-                <p className="whitespace-pre-wrap text-sm">{r.message}</p>
-              </CardContent>
-            </Card>
+          responses.map((r, i) => (
+            <motion.div
+              key={r.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: Math.min(i * 0.04, 0.24) }}
+            >
+              <Card>
+                <CardContent className="p-4">
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span className="font-medium">{r.profiles?.display_name || "Unknown"}</span>
+                    <span className="text-muted-foreground">{timeAgo(r.created_at)}</span>
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm">{r.message}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
           ))
         )}
       </div>
@@ -770,11 +783,15 @@ export default function ComplaintDetail() {
             placeholder={isAdmin ? "Write a response to the student..." : "Add a comment..."}
             rows={3}
           />
-          <Button onClick={handleSendResponse} disabled={sending || !newMessage.trim()}>
+          <Button
+            onClick={handleSendResponse}
+            disabled={sending || !newMessage.trim()}
+            className="shadow-elevation-sm hover:shadow-elevation-md transition-shadow duration-200"
+          >
             {sending ? "Sending..." : "Send Response"}
           </Button>
         </CardContent>
       </Card>
-    </div>
+    </motion.div>
   );
 }
