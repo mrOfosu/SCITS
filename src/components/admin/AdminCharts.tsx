@@ -147,16 +147,36 @@ export default function AdminCharts({ complaints }: AdminChartsProps) {
       <Card className="shadow-elevation-sm">
         <CardHeader className="pb-2"><CardTitle className="text-base tracking-tight">By Status</CardTitle></CardHeader>
         <CardContent>
-          <ChartContainer config={barConfig} className="h-[200px] w-full">
-            <PieChart>
+          <ChartContainer config={barConfig} className="h-[240px] w-full">
+            <PieChart margin={{ top: 8, right: 16, bottom: 8, left: 16 }}>
               <ChartTooltip content={<ChartTooltipContent />} />
-              <Pie data={byStatus} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, count }) => `${name}: ${count}`} fontSize={11}>
+              <Pie
+                data={byStatus}
+                dataKey="count"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius={38}
+                outerRadius={68}
+                paddingAngle={2}
+                labelLine={false}
+                label={({ percent }) => (percent && percent > 0.06 ? `${Math.round(percent * 100)}%` : "")}
+              >
                 {byStatus.map((entry, i) => (
-                  <Cell key={i} fill={STATUS_COLORS[entry.status] || NEUTRAL_RAMP[i % NEUTRAL_RAMP.length]} />
+                  <Cell key={i} fill={STATUS_COLORS[entry.status] || NEUTRAL_RAMP[i % NEUTRAL_RAMP.length]} stroke="hsl(var(--background))" strokeWidth={2} />
                 ))}
               </Pie>
             </PieChart>
           </ChartContainer>
+          <div className="mt-2 flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs">
+            {byStatus.map((s, i) => (
+              <div key={s.name} className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-sm" style={{ background: COLORS[i % COLORS.length] }} />
+                <span className="text-muted-foreground">{s.name}</span>
+                <span className="font-medium">{s.count}</span>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 

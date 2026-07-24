@@ -149,23 +149,29 @@ export type Database = {
       }
       complaint_feedback: {
         Row: {
+          comment: string | null
           complaint_id: string
           created_at: string
           id: string
+          rating: number | null
           satisfied: boolean
           user_id: string
         }
         Insert: {
+          comment?: string | null
           complaint_id: string
           created_at?: string
           id?: string
+          rating?: number | null
           satisfied: boolean
           user_id: string
         }
         Update: {
+          comment?: string | null
           complaint_id?: string
           created_at?: string
           id?: string
+          rating?: number | null
           satisfied?: boolean
           user_id?: string
         }
