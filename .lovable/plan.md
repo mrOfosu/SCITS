@@ -1,16 +1,40 @@
-Regenerate `/mnt/documents/ER_Diagram_Chen.png` to match the uploaded reference styling.
+# System Implementation and Testing document
 
-## Visual spec (from reference image)
-- Entities: light-blue filled rectangles, uppercase labels (STUDENT, COMPLAINT, FACULTY, DEPARTMENT, COMPLAINT CATEGORY, COMPLAINT TYPE, ADMIN / STAFF, RESPONSE, ESCALATION, ACTIVITY LOG, FEEDBACK, NOTIFICATION).
-- Relationships: light-orange filled diamonds (Submits, Handles, Contains, Routes, AssignedTo, Classifies, Categorizes, Receives, Writes, Escalates, Triggers, Generates, Produces, Bookmarks, Receives-notification).
-- Attributes: light-green filled ellipses; primary keys underlined (category_id, type_id, faculty_id, department_id, user_id, complaint_id, response_id, escalation_id, log_id, feedback_id, notif_id).
-- Edges: curved (default Graphviz splines), thin black, with 1 / N / M cardinality labels near the diamond.
-- Layout: organic radial arrangement centered on COMPLAINT (dot engine, splines=true).
+Produce a new academic chapter document, `System_Implementation_and_Testing.pdf`, matching the layout and typography of `Methodology_and_System_Specifications_v2.pdf`, and reflecting the system as it exists today (tiered GCTU roles, smart routing, escalation, feedback, Kwame AI for students only).
+
+## Contents
+
+1. Introduction — purpose and scope of the implementation phase.
+2. Development Environment and Tools — React 18 + TypeScript + Vite, Tailwind + shadcn/ui, Postgres/Auth/Storage/Edge Functions backend, Git-based workflow, Vitest.
+3. System Architecture Implementation — client layer, data/API layer, serverless function layer, scheduled jobs.
+4. Module Implementation — for each: purpose, key logic, screens involved
+   - Authentication and onboarding (email verification, Google sign-in, mandatory profile completion)
+   - Faculty/Department reference data and cascading selection
+   - Complaint submission (categories, types, auto-priority, attachments, anonymity, smart reference IDs)
+   - Smart routing and auto-assignment
+   - Role-based dashboards (student, department admin, HOD, faculty admin, super admin)
+   - Response, rejection with reason, status lifecycle
+   - Escalation engine (3-day automatic, manual escalate to HOD)
+   - Notifications (in-app real-time and email)
+   - Activity log and timeline
+   - Student feedback and star rating; complaint deletion rules
+   - Kwame AI assistant (students only)
+   - Reports and exports (CSV/PDF)
+5. Security Implementation — RLS on all tables, separate roles table with security-definer role checks, scoped visibility, storage access rules, secret handling.
+6. Testing — testing strategy and levels
+   - Unit testing (Vitest), integration testing, system testing, UAT
+   - Test case tables: ID, objective, steps, expected result, actual result, status — covering auth, submission, routing, escalation, RBAC, notifications, feedback, deletion windows
+   - Non-functional testing: performance, responsiveness across devices, accessibility, security/RLS negative tests
+   - Defect log summary: issues found and how they were resolved (email verification, redirect loop, resolved-count tally, RLS response failures, HOD visibility, chart label clipping)
+7. Deployment — build, hosting, environment configuration, cron scheduling.
+8. Summary.
 
 ## Technical approach
-- Update `/tmp/er_chen.py`: set `splines='true'`, add `style='filled'` + fillcolors (`#DCE8FA` entities, `#F7D9A6` diamonds, `#DDEFCB` attributes), uppercase entity labels, keep underlined PKs via HTML labels.
-- Render to `/mnt/documents/ER_Diagram_Chen.png` at 220 DPI.
-- QA: view the PNG, check colors, cardinality labels, no clipping; iterate if needed.
+
+- Python + ReportLab generation script written to `/tmp`, styled to match the existing v2 PDF (same fonts, heading hierarchy, table styling, header/footer with page numbers).
+- Output written to `/mnt/documents/System_Implementation_and_Testing.pdf`.
+- QA: render every page to images and inspect each for clipped text, table overflow, and blank pages; fix and re-run until clean.
 
 ## Out of scope
-No code, schema, or PDF changes.
+
+No application code, schema, or UI changes.
