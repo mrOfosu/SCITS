@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, LogOut, Home, PlusCircle, Shield, User } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
