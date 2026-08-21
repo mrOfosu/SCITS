@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { GraduationCap, LogOut, Home, PlusCircle, Shield, User } from "lucide-react";
 import NotificationBell from "@/components/NotificationBell";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function Layout({ children }: { children: ReactNode }) {
   const { user, isAdmin, signOut } = useAuth();
@@ -71,6 +72,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
       </header>
       <main className="mx-auto max-w-7xl px-3 sm:px-4 lg:px-6 py-4 sm:py-6">{children}</main>
+      <ThemeToggle />
     </div>
   );
 }
