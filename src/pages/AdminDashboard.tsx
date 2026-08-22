@@ -164,35 +164,45 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               {escalated.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">
-                  No escalated complaints awaiting your action.
-                </p>
+                <div className="flex flex-col items-center py-8 text-center">
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
+                    <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">No escalated complaints awaiting your action.</p>
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {escalated.slice(0, 8).map((c) => (
-                    <Link
+                  {escalated.slice(0, 8).map((c, i) => (
+                    <motion.div
                       key={c.id}
-                      to={`/admin/complaint/${c.id}`}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-l-2 border-l-destructive bg-destructive/5 p-3 transition-colors hover:bg-destructive/10"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: Math.min(i * 0.04, 0.24) }}
+                      whileHover={{ x: 2 }}
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start sm:items-center gap-2 flex-wrap">
-                          <span className="font-mono text-xs text-muted-foreground shrink-0">{c.reference_id || "—"}</span>
-                          <span className="text-sm font-medium break-words flex-1 min-w-0">{c.subject}</span>
-                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">Escalated</Badge>
+                      <Link
+                        to={`/admin/complaint/${c.id}`}
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border border-l-2 border-l-destructive bg-destructive/5 p-3 transition-colors duration-150 hover:bg-destructive/10"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start sm:items-center gap-2 flex-wrap">
+                            <span className="font-mono text-xs text-muted-foreground shrink-0">{c.reference_id || "—"}</span>
+                            <span className="text-sm font-medium break-words flex-1 min-w-0">{c.subject}</span>
+                            <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">Escalated</Badge>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground flex-wrap">
+                            <span className="truncate max-w-[140px] sm:max-w-none">{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</span>
+                            <span>·</span>
+                            <span>{categoryLabels[c.category] || c.category}</span>
+                            <span>·</span>
+                            <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground flex-wrap">
-                          <span className="truncate max-w-[140px] sm:max-w-none">{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</span>
-                          <span>·</span>
-                          <span>{categoryLabels[c.category] || c.category}</span>
-                          <span>·</span>
-                          <span>{new Date(c.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      <Badge variant={statusConfig[c.status]?.variant || "outline"} className="shrink-0 self-start sm:self-center sm:ml-2">
-                        {statusConfig[c.status]?.label || c.status}
-                      </Badge>
-                    </Link>
+                        <Badge variant={statusConfig[c.status]?.variant || "outline"} className="shrink-0 self-start sm:self-center sm:ml-2">
+                          {statusConfig[c.status]?.label || c.status}
+                        </Badge>
+                      </Link>
+                    </motion.div>
                   ))}
                 </div>
               )}
@@ -213,40 +223,52 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           {recentComplaints.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">No complaints yet.</p>
+            <div className="flex flex-col items-center py-8 text-center">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-secondary">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <p className="text-sm text-muted-foreground">No complaints yet.</p>
+            </div>
           ) : (
             <div className="space-y-3">
-              {recentComplaints.map((c) => {
+              {recentComplaints.map((c, i) => {
                 const isOverdue =
                   c.status !== "resolved" &&
                   c.status !== "closed" &&
                   (Date.now() - new Date(c.created_at).getTime()) / (1000 * 60 * 60 * 24) > 7;
                 return (
-                <Link
+                <motion.div
                   key={c.id}
-                  to={`/admin/complaint/${c.id}`}
-                  className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border p-3 transition-colors hover:bg-muted/50 ${isOverdue ? "border-l-2 border-l-destructive bg-destructive/5" : ""}`}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: Math.min(i * 0.04, 0.24) }}
+                  whileHover={{ x: 2 }}
                 >
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start sm:items-center gap-2 flex-wrap">
-                      <span className="font-mono text-xs text-muted-foreground shrink-0">{c.reference_id || "—"}</span>
-                      <span className="text-sm font-medium break-words flex-1 min-w-0">{c.subject}</span>
-                      {isOverdue && (
-                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">Overdue</Badge>
-                      )}
+                  <Link
+                    to={`/admin/complaint/${c.id}`}
+                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border p-3 transition-colors duration-150 hover:bg-muted/50 ${isOverdue ? "border-l-2 border-l-destructive bg-destructive/5" : ""}`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start sm:items-center gap-2 flex-wrap">
+                        <span className="font-mono text-xs text-muted-foreground shrink-0">{c.reference_id || "—"}</span>
+                        <span className="text-sm font-medium break-words flex-1 min-w-0">{c.subject}</span>
+                        {isOverdue && (
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">Overdue</Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground flex-wrap">
+                        <span className="truncate max-w-[140px] sm:max-w-none">{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</span>
+                        <span>·</span>
+                        <span>{categoryLabels[c.category] || c.category}</span>
+                        <span>·</span>
+                        <span>{new Date(c.created_at).toLocaleDateString()}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground flex-wrap">
-                      <span className="truncate max-w-[140px] sm:max-w-none">{c.profiles?.full_name || c.profiles?.display_name || "Unknown"}</span>
-                      <span>·</span>
-                      <span>{categoryLabels[c.category] || c.category}</span>
-                      <span>·</span>
-                      <span>{new Date(c.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  <Badge variant={statusConfig[c.status]?.variant || "outline"} className="shrink-0 self-start sm:self-center sm:ml-2">
-                    {statusConfig[c.status]?.label || c.status}
-                  </Badge>
-                </Link>
+                    <Badge variant={statusConfig[c.status]?.variant || "outline"} className="shrink-0 self-start sm:self-center sm:ml-2">
+                      {statusConfig[c.status]?.label || c.status}
+                    </Badge>
+                  </Link>
+                </motion.div>
                 );
               })}
             </div>
@@ -260,22 +282,23 @@ export default function AdminDashboard() {
           <CardTitle className="text-base tracking-tight">Quick Actions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-2 sm:gap-3">
-            <Link to="/admin/complaints" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full sm:w-auto h-11 sm:h-10 gap-2">
-                <FileText className="h-4 w-4" /> View Complaints
-              </Button>
-            </Link>
-            <Link to="/admin/reports" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full sm:w-auto h-11 sm:h-10 gap-2">
-                <Download className="h-4 w-4" /> Export Reports
-              </Button>
-            </Link>
-            <Link to="/admin/notifications" className="w-full sm:w-auto">
-              <Button variant="outline" className="w-full sm:w-auto h-11 sm:h-10 gap-2">
-                <Bell className="h-4 w-4" /> View Notifications
-              </Button>
-            </Link>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { to: "/admin/complaints", icon: FileText, label: "View Complaints" },
+              { to: "/admin/reports", icon: Download, label: "Export Reports" },
+              { to: "/admin/notifications", icon: Bell, label: "View Notifications" },
+            ].map((action) => (
+              <motion.div key={action.to} whileHover={{ y: -2 }} transition={{ duration: 0.15 }}>
+                <Link to={action.to} className="block">
+                  <div className="flex items-center gap-3 rounded-lg border p-3 shadow-elevation-sm transition-shadow duration-200 hover:shadow-elevation-md">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                      <action.icon className="h-4 w-4 text-foreground" />
+                    </div>
+                    <span className="text-sm font-medium">{action.label}</span>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
           </div>
         </CardContent>
       </Card>

@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle, Clock, CheckCircle2, XCircle, FileText, AlertTriangle, Timer, Ban } from "lucide-react";
@@ -10,14 +9,14 @@ interface StatsCardsProps {
 
 export default function StatsCards({ counts, avgResolutionDays }: StatsCardsProps) {
   const stats = [
-    { label: "Total", value: counts.total, icon: FileText, color: "text-foreground", to: "/admin/complaints?status=all" },
-    { label: "Pending", value: counts.pending, icon: AlertCircle, color: "text-destructive", to: "/admin/complaints?status=pending" },
-    { label: "In Review", value: counts.in_review, icon: Clock, color: "text-foreground", to: "/admin/complaints?status=in_review" },
-    { label: "Resolved", value: counts.resolved, icon: CheckCircle2, color: "text-muted-foreground", to: "/admin/complaints?status=resolved" },
-    { label: "Closed", value: counts.closed, icon: XCircle, color: "text-muted-foreground/50", to: "/admin/complaints?status=closed" },
-    { label: "Rejected", value: counts.rejected ?? 0, icon: Ban, color: "text-destructive", to: "/admin/complaints?status=rejected" },
-    { label: "Overdue", value: counts.overdue, icon: AlertTriangle, color: "text-destructive", to: "/admin/complaints?status=overdue" },
-    { label: "Avg Resolution", value: avgResolutionDays !== null ? `${avgResolutionDays}d` : "—", icon: Timer, color: "text-foreground", to: "/admin/reports" },
+    { label: "Total", value: counts.total, icon: FileText, color: "text-foreground" },
+    { label: "Pending", value: counts.pending, icon: AlertCircle, color: "text-destructive" },
+    { label: "In Review", value: counts.in_review, icon: Clock, color: "text-foreground" },
+    { label: "Resolved", value: counts.resolved, icon: CheckCircle2, color: "text-muted-foreground" },
+    { label: "Closed", value: counts.closed, icon: XCircle, color: "text-muted-foreground/50" },
+    { label: "Rejected", value: counts.rejected ?? 0, icon: Ban, color: "text-destructive" },
+    { label: "Overdue", value: counts.overdue, icon: AlertTriangle, color: "text-destructive" },
+    { label: "Avg Resolution", value: avgResolutionDays !== null ? `${avgResolutionDays}d` : "—", icon: Timer, color: "text-foreground" },
   ];
 
   return (

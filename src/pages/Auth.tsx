@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import logoWatermark from "@/assets/logo-watermark.jpg";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -172,6 +173,18 @@ export default function Auth() {
             backgroundSize: "24px 24px",
           }}
         >
+          {/* Desaturated logo watermark, isolated on its own layer so the grayscale filter
+              doesn't affect the dot-grid texture or any content stacked above it */}
+          <div
+            className="pointer-events-none absolute inset-0 -z-10 opacity-[0.06]"
+            style={{
+              backgroundImage: `url(${logoWatermark})`,
+              backgroundSize: "140% auto",
+              backgroundPosition: "center 65%",
+              backgroundRepeat: "no-repeat",
+              filter: "grayscale(1) contrast(1.1)",
+            }}
+          />
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-foreground">
               <GraduationCap className="h-5 w-5 text-background" />

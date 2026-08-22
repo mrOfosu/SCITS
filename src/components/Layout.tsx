@@ -25,7 +25,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 transition-colors duration-200">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4 sm:px-6">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-2 px-4 sm:px-6">
           <Link
             to={isAdmin ? "/admin" : "/"}
             className="flex items-center gap-2 font-semibold tracking-tight min-w-0 group"
@@ -92,7 +92,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           />
         </div>
       </header>
-      <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-6 py-6 sm:py-8">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 py-6 sm:py-8">{children}</main>
     </div>
   );
 }
