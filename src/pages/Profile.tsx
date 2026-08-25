@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -77,64 +78,77 @@ export default function Profile() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-              <User className="h-5 w-5 text-primary" />
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <Card className="shadow-elevation-sm">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary shrink-0">
+                <User className="h-5 w-5 text-foreground" />
+              </div>
+              <div>
+                <CardTitle className="text-xl tracking-tight">My Profile</CardTitle>
+                <CardDescription>View and update your personal details</CardDescription>
+              </div>
             </div>
-            <div>
-              <CardTitle>My Profile</CardTitle>
-              <CardDescription>View and update your personal details</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" value={profile?.email || ""} disabled className="bg-muted" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="studentId">Student ID</Label>
-              <Input id="studentId" value={studentId} onChange={(e) => setStudentId(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label>Department</Label>
-              <Select value={department} onValueChange={setDepartment}>
-                <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
-                <SelectContent>
-                  {departments.map((d) => (
-                    <SelectItem key={d} value={d}>{d}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Level</Label>
-              <Select value={level} onValueChange={setLevel}>
-                <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                <SelectContent>
-                  {levels.map((l) => (
-                    <SelectItem key={l} value={l}>{l}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
-            </div>
-            <Button type="submit" className="w-full" disabled={saving || !isValid}>
-              {saving ? "Saving..." : "Update Profile"}
-            </Button>
-          </CardContent>
-        </form>
-      </Card>
+          </CardHeader>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">Account</p>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" value={profile?.email || ""} disabled className="bg-muted" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="studentId">Student ID</Label>
+                <Input id="studentId" value={studentId} onChange={(e) => setStudentId(e.target.value)} required />
+              </div>
+
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 pt-1">Academic</p>
+              <div className="space-y-2">
+                <Label>Department</Label>
+                <Select value={department} onValueChange={setDepartment}>
+                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectContent>
+                    {departments.map((d) => (
+                      <SelectItem key={d} value={d}>{d}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Level</Label>
+                <Select value={level} onValueChange={setLevel}>
+                  <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                  <SelectContent>
+                    {levels.map((l) => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number</Label>
+                <Input id="phone" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} required />
+              </div>
+              <Button
+                type="submit"
+                className="w-full shadow-elevation-sm hover:shadow-elevation-md transition-shadow duration-200"
+                disabled={saving || !isValid}
+              >
+                {saving ? "Saving..." : "Update Profile"}
+              </Button>
+            </CardContent>
+          </form>
+        </Card>
+      </motion.div>
     </div>
   );
 }

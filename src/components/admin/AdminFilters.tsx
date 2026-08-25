@@ -58,8 +58,8 @@ export default function AdminFilters({ filters, onChange, departments }: AdminFi
   const isDefault = JSON.stringify(filters) === JSON.stringify(defaultFilters);
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="rounded-lg border bg-card p-3 sm:p-4 shadow-elevation-sm space-y-3">
+      <div className="flex flex-wrap items-center gap-2.5">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -120,7 +120,7 @@ export default function AdminFilters({ filters, onChange, departments }: AdminFi
           </SelectContent>
         </Select>
         {!isDefault && (
-          <Button variant="ghost" size="sm" onClick={() => onChange(defaultFilters)}>
+          <Button variant="ghost" size="sm" className="rounded-full text-muted-foreground hover:text-foreground" onClick={() => onChange(defaultFilters)}>
             <X className="h-4 w-4 mr-1" /> Reset
           </Button>
         )}

@@ -11,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { prefKey } from "@/hooks/useAppPreferences";
 
 const accentColors = [
-  { name: "Default", value: "default", hsl: "222.2 47.4% 11.2%" },
+  { name: "Default", value: "default", hsl: "0 0% 9%" },
   { name: "Blue", value: "blue", hsl: "221 83% 53%" },
   { name: "Green", value: "green", hsl: "142 71% 45%" },
   { name: "Purple", value: "purple", hsl: "262 83% 58%" },
@@ -127,22 +127,22 @@ export default function AppearanceSection() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-5">
+      <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-semibold text-foreground">Appearance</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-foreground">Appearance</h2>
           <p className="text-sm text-muted-foreground">Customize the look and feel of your dashboard</p>
         </div>
-        <Button variant="outline" size="sm" onClick={resetToDefaults} className="gap-2">
+        <Button variant="outline" size="sm" onClick={resetToDefaults} className="gap-2 rounded-full shrink-0">
           <RotateCcw className="h-4 w-4" />
           Reset to Defaults
         </Button>
       </div>
 
       {/* Theme Mode */}
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base tracking-tight flex items-center gap-2">
             <Palette className="h-4 w-4 text-muted-foreground" />
             Theme Mode
           </CardTitle>
@@ -159,8 +159,8 @@ export default function AppearanceSection() {
                 key={mode}
                 onClick={() => applyTheme(mode)}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all hover:bg-accent",
-                  theme === mode ? "border-primary bg-accent" : "border-border"
+                  "flex flex-col items-center gap-2 rounded-lg border p-4 transition-colors duration-150 hover:bg-secondary/50",
+                  theme === mode ? "border-foreground bg-secondary/60" : "border-border"
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -172,27 +172,27 @@ export default function AppearanceSection() {
       </Card>
 
       {/* Accent Color */}
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base tracking-tight flex items-center gap-2">
             <Palette className="h-4 w-4 text-muted-foreground" />
             Accent Color
           </CardTitle>
           <CardDescription>Select a primary accent color for the interface</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2.5">
             {accentColors.map((color) => (
               <button
                 key={color.value}
                 onClick={() => applyAccent(color.value)}
                 className={cn(
-                  "flex items-center gap-2 rounded-lg border-2 px-4 py-2 transition-all hover:bg-accent",
-                  accentColor === color.value ? "border-primary" : "border-border"
+                  "flex items-center gap-2 rounded-full border px-3.5 py-1.5 transition-colors duration-150 hover:bg-secondary/50",
+                  accentColor === color.value ? "border-foreground" : "border-border"
                 )}
               >
                 <div
-                  className="h-4 w-4 rounded-full border"
+                  className="h-3.5 w-3.5 rounded-full border border-black/10"
                   style={{ backgroundColor: `hsl(${color.hsl})` }}
                 />
                 <span className="text-sm">{color.name}</span>
@@ -203,9 +203,9 @@ export default function AppearanceSection() {
       </Card>
 
       {/* Font Size & Sidebar */}
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base tracking-tight flex items-center gap-2">
             <Type className="h-4 w-4 text-muted-foreground" />
             Display Settings
           </CardTitle>

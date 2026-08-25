@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import KwameChatbot from "@/components/KwameChatbot";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -64,7 +65,7 @@ export default function StudentDashboard() {
             <div className="h-8 w-48 bg-muted rounded animate-pulse" />
             <div className="h-5 w-80 bg-muted/60 rounded animate-pulse" />
           </div>
-          <div className="h-10 w-36 bg-primary/20 rounded animate-pulse" />
+          <div className="h-10 w-36 bg-muted rounded animate-pulse" />
         </div>
         <ComplaintListSkeleton />
       </div>
@@ -72,15 +73,15 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6 animate-fade-in pb-24 sm:pb-6">
+    <div className="space-y-5 sm:space-y-6 pb-24 sm:pb-6">
       <RoleGreeting />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="space-y-1 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground">My Complaints</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">My Complaints</h1>
           <p className="text-sm sm:text-base text-muted-foreground">Track and manage your submitted complaints</p>
         </div>
         <Link to="/submit" className="w-full sm:w-auto">
-          <Button className="w-full sm:w-auto h-11 sm:h-10 gap-1.5 hover:scale-[1.02] transition-transform duration-200 shadow-sm hover:shadow-md">
+          <Button className="w-full sm:w-auto h-11 sm:h-10 gap-1.5 shadow-elevation-sm hover:shadow-elevation-md transition-shadow duration-200">
             <PlusCircle className="h-4 w-4" /> New Complaint
           </Button>
         </Link>
@@ -88,122 +89,146 @@ export default function StudentDashboard() {
 
       {/* Filter tabs */}
       {bookmarkedIds.size > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant={filter === "all" ? "default" : "outline"} size="sm" className="h-9" onClick={() => setFilter("all")}>
+        <div className="inline-flex items-center gap-0.5 rounded-full bg-muted/60 p-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 rounded-full px-3 transition-colors duration-150 ${
+              filter === "all" ? "bg-background shadow-elevation-sm text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+            }`}
+            onClick={() => setFilter("all")}
+          >
             All ({complaints.length})
           </Button>
-          <Button variant={filter === "bookmarked" ? "default" : "outline"} size="sm" className="h-9 gap-1" onClick={() => setFilter("bookmarked")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 rounded-full px-3 gap-1 transition-colors duration-150 ${
+              filter === "bookmarked" ? "bg-background shadow-elevation-sm text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-transparent"
+            }`}
+            onClick={() => setFilter("bookmarked")}
+          >
             <BookmarkCheck className="h-3.5 w-3.5" /> Bookmarked ({bookmarkedIds.size})
           </Button>
         </div>
       )}
 
       {displayed.length === 0 ? (
-        <Card className="border-dashed animate-fade-in">
-          <CardContent className="py-16 text-center">
-            <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-              <PlusCircle className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="font-semibold text-lg mb-2">
-              {filter === "bookmarked" ? "No bookmarked complaints" : "No complaints yet"}
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              {filter === "bookmarked" 
-                ? "Bookmark complaints from their detail page to see them here."
-                : "You haven't submitted any complaints yet. Start by submitting your first complaint."}
-            </p>
-            {filter !== "bookmarked" && (
-              <Link to="/submit">
-                <Button variant="outline" className="hover:scale-105 transition-transform duration-200">
-                  Submit your first complaint
-                </Button>
-              </Link>
-            )}
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <Card className="border-border/70">
+            <CardContent className="py-16 text-center">
+              <div className="mx-auto w-14 h-14 bg-secondary rounded-full flex items-center justify-center mb-4">
+                <PlusCircle className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2 tracking-tight">
+                {filter === "bookmarked" ? "No bookmarked complaints" : "No complaints yet"}
+              </h3>
+              <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                {filter === "bookmarked"
+                  ? "Bookmark complaints from their detail page to see them here."
+                  : "You haven't submitted any complaints yet. Start by submitting your first complaint."}
+              </p>
+              {filter !== "bookmarked" && (
+                <Link to="/submit">
+                  <Button variant="outline">Submit your first complaint</Button>
+                </Link>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {displayed.map((c, index) => {
             const hasUpdates = c.has_new_updates;
             const estHours = c.estimated_resolution_hours;
             const isEscalated = ((c as any).escalation_level || 0) >= 1;
             return (
-              <Link key={c.id} to={`/complaint/${c.id}`} className="block">
-                <Card
-                  className={`group transition-all duration-200 hover:shadow-md border hover:border-primary/20 animate-fade-in overflow-hidden ${
-                    hasUpdates ? "ring-1 ring-primary/20" : ""
-                  } ${isEscalated ? "border-l-4 border-l-amber-500" : ""}`}
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <CardContent className="p-0">
-                    {/* Top bar: status strip */}
-                    <div className="flex items-center justify-between px-4 pt-3 pb-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {hasUpdates && (
-                          <span className="h-2 w-2 rounded-full bg-primary shrink-0" title="New updates" />
-                        )}
-                        <span className="font-mono text-[11px] text-muted-foreground shrink-0">
-                          {c.reference_id}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {c.attachment_url && (
-                          <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
-                        )}
-                        {bookmarkedIds.has(c.id) && (
-                          <BookmarkCheck className="h-3.5 w-3.5 text-primary" />
-                        )}
-                        <Badge
-                          variant={statusConfig[c.status].variant}
-                          className="text-[10px] px-1.5 py-0 h-5"
-                        >
-                          {statusConfig[c.status].label}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Title */}
-                    <div className="px-4 pb-1">
-                      <h3 className="text-[15px] font-semibold text-foreground group-hover:text-primary transition-colors leading-snug break-words">
-                        {c.subject}
-                      </h3>
-                    </div>
-
-                    {/* Meta row */}
-                    <div className="px-4 pb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                      <Badge
-                        variant={priorityConfig[c.priority]?.variant || "outline"}
-                        className="text-[10px] px-1.5 py-0 h-5 font-normal"
-                      >
-                        {priorityConfig[c.priority]?.label || c.priority} Priority
-                      </Badge>
-                      <span>{categoryLabels[c.category]}</span>
-                      <span className="hidden sm:inline text-border">|</span>
-                      <span>{timeAgo(c.updated_at)}</span>
-                      {estHours && c.status !== "closed" && c.status !== "resolved" && (
-                        <>
-                          <span className="hidden sm:inline text-border">|</span>
-                          <span className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {estimatedResolutionLabel(estHours)}
+              <motion.div
+                key={c.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: Math.min(index * 0.05, 0.3) }}
+              >
+                <Link to={`/complaint/${c.id}`} className="block">
+                  <Card
+                    className={`group transition-all duration-200 hover:shadow-elevation-md hover:border-foreground/20 overflow-hidden ${
+                      hasUpdates ? "ring-1 ring-foreground/10" : ""
+                    } ${isEscalated ? "border-l-4 border-l-amber-500" : ""}`}
+                  >
+                    <CardContent className="p-0">
+                      {/* Top bar: status strip */}
+                      <div className="flex items-center justify-between px-4 pt-3 pb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {hasUpdates && (
+                            <span className="h-2 w-2 rounded-full bg-foreground shrink-0" title="New updates" />
+                          )}
+                          <span className="font-mono text-[11px] text-muted-foreground shrink-0">
+                            {c.reference_id}
                           </span>
-                        </>
-                      )}
-                      {isEscalated && (
-                        <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-[10px] px-1.5 py-0 h-5 font-normal">
-                          Escalated
-                        </Badge>
-                      )}
-                    </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {c.attachment_url && (
+                            <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />
+                          )}
+                          {bookmarkedIds.has(c.id) && (
+                            <BookmarkCheck className="h-3.5 w-3.5 text-foreground" />
+                          )}
+                          <Badge
+                            variant={statusConfig[c.status].variant}
+                            className="text-[10px] px-1.5 py-0 h-5"
+                          >
+                            {statusConfig[c.status].label}
+                          </Badge>
+                        </div>
+                      </div>
 
-                    {/* Bottom action hint */}
-                    <div className="px-4 py-2.5 bg-muted/30 border-t flex items-center justify-between text-xs text-muted-foreground group-hover:bg-muted/50 transition-colors">
-                      <span>Tap to view details</span>
-                      <Eye className="h-3.5 w-3.5" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+                      {/* Title */}
+                      <div className="px-4 pb-1">
+                        <h3 className="text-[15px] font-semibold text-foreground transition-colors leading-snug break-words">
+                          {c.subject}
+                        </h3>
+                      </div>
+
+                      {/* Meta row */}
+                      <div className="px-4 pb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <Badge
+                          variant={priorityConfig[c.priority]?.variant || "outline"}
+                          className="text-[10px] px-1.5 py-0 h-5 font-normal"
+                        >
+                          {priorityConfig[c.priority]?.label || c.priority} Priority
+                        </Badge>
+                        <span>{categoryLabels[c.category]}</span>
+                        <span className="hidden sm:inline text-border">|</span>
+                        <span>{timeAgo(c.updated_at)}</span>
+                        {estHours && c.status !== "closed" && c.status !== "resolved" && (
+                          <>
+                            <span className="hidden sm:inline text-border">|</span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {estimatedResolutionLabel(estHours)}
+                            </span>
+                          </>
+                        )}
+                        {isEscalated && (
+                          <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 text-[10px] px-1.5 py-0 h-5 font-normal">
+                            Escalated
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Bottom action hint */}
+                      <div className="px-4 py-2.5 bg-muted/30 border-t flex items-center justify-between text-xs text-muted-foreground group-hover:bg-muted/60 transition-colors duration-200">
+                        <span>Tap to view details</span>
+                        <Eye className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </motion.div>
             );
           })}
         </div>

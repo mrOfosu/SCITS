@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -71,15 +72,15 @@ export default function NotificationSettingsSection() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-foreground">Notification Settings</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">Notification Settings</h2>
         <p className="text-sm text-muted-foreground">Control how notifications are sent and received</p>
       </div>
 
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base tracking-tight flex items-center gap-2">
             <Bell className="h-4 w-4 text-muted-foreground" />
             Email & Alert Preferences
           </CardTitle>
@@ -89,7 +90,7 @@ export default function NotificationSettingsSection() {
             <div key={item.key}>
               <div className="flex items-center justify-between py-3">
                 <div className="flex items-center gap-3">
-                  <item.icon className="h-4 w-4 text-muted-foreground" />
+                  <item.icon className="h-4 w-4 text-muted-foreground shrink-0" />
                   <div>
                     <Label className="text-sm">{item.title}</Label>
                     <p className="text-xs text-muted-foreground">{item.desc}</p>
@@ -103,12 +104,20 @@ export default function NotificationSettingsSection() {
         </CardContent>
       </Card>
 
-      {dirty && (
-        <div className="flex gap-3">
-          <Button onClick={handleSave}>Save Settings</Button>
-          <Button variant="outline" onClick={() => { setPrefs(defaultNotifPrefs); setDirty(false); }}>Reset</Button>
-        </div>
-      )}
+      <AnimatePresence>
+        {dirty && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="flex gap-3"
+          >
+            <Button onClick={handleSave} className="shadow-elevation-sm">Save Settings</Button>
+            <Button variant="outline" onClick={() => { setPrefs(defaultNotifPrefs); setDirty(false); }}>Reset</Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

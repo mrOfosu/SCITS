@@ -73,16 +73,16 @@ export default function ProfileAccountSection() {
   const initials = (displayName || "A").split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-foreground">Profile & Account</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">Profile & Account</h2>
         <p className="text-sm text-muted-foreground">Manage your personal account information</p>
       </div>
 
       {/* Avatar & Name */}
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base tracking-tight flex items-center gap-2">
             <User className="h-4 w-4 text-muted-foreground" />
             Personal Information
           </CardTitle>
@@ -92,9 +92,9 @@ export default function ProfileAccountSection() {
             <div className="relative group">
               <Avatar className="h-16 w-16">
                 <AvatarImage src="" />
-                <AvatarFallback className="text-lg bg-primary/10 text-primary">{initials}</AvatarFallback>
+                <AvatarFallback className="text-lg bg-secondary text-foreground">{initials}</AvatarFallback>
               </Avatar>
-              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cursor-pointer">
                 <Camera className="h-5 w-5 text-white" />
               </div>
             </div>
@@ -130,9 +130,9 @@ export default function ProfileAccountSection() {
       </Card>
 
       {/* Change Password */}
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base tracking-tight flex items-center gap-2">
             <Lock className="h-4 w-4 text-muted-foreground" />
             Change Password
           </CardTitle>
@@ -166,9 +166,9 @@ export default function ProfileAccountSection() {
       </Card>
 
       {/* Security Options */}
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base tracking-tight flex items-center gap-2">
             <Shield className="h-4 w-4 text-muted-foreground" />
             Security
           </CardTitle>
@@ -185,7 +185,7 @@ export default function ProfileAccountSection() {
 
           <Separator />
 
-          <Button variant="outline" className="text-destructive hover:text-destructive" onClick={signOut}>
+          <Button variant="outline" className="text-destructive hover:text-destructive hover:bg-destructive/5" onClick={signOut}>
             <LogOut className="mr-2 h-4 w-4" />
             Sign Out
           </Button>

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import logoWatermark from "@/assets/logo-watermark.jpg";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,47 +100,54 @@ export default function Auth() {
 
   if (isForgotPassword) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10 px-4">
-        <Card className="w-full max-w-md shadow-xl">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary">
-              <GraduationCap className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <CardTitle className="text-2xl">Reset Password</CardTitle>
-            <CardDescription>Enter your email to receive a reset link</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleForgotPassword}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="resetEmail">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="resetEmail"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="student@university.edu"
-                    required
-                    className="pl-10"
-                  />
-                </div>
+      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-md"
+        >
+          <Card className="shadow-elevation-lg border-border/60">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-foreground">
+                <GraduationCap className="h-6 w-6 text-background" />
               </div>
-            </CardContent>
-            <CardFooter className="flex flex-col gap-3">
-              <Button type="submit" className="w-full h-11" disabled={loading}>
-                {loading ? "Sending..." : "Send Reset Link"}
-              </Button>
-              <button
-                type="button"
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setIsForgotPassword(false)}
-              >
-                <ArrowLeft className="h-3 w-3" /> Back to sign in
-              </button>
-            </CardFooter>
-          </form>
-        </Card>
+              <CardTitle className="text-2xl tracking-tight">Reset Password</CardTitle>
+              <CardDescription>Enter your email to receive a reset link</CardDescription>
+            </CardHeader>
+            <form onSubmit={handleForgotPassword}>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="resetEmail">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="resetEmail"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="student@university.edu"
+                      required
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-3">
+                <Button type="submit" className="w-full h-11 shadow-elevation-sm hover:shadow-elevation-md transition-shadow duration-200" disabled={loading}>
+                  {loading ? "Sending..." : "Send Reset Link"}
+                </Button>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
+                  onClick={() => setIsForgotPassword(false)}
+                >
+                  <ArrowLeft className="h-3 w-3" /> Back to sign in
+                </button>
+              </CardFooter>
+            </form>
+          </Card>
+        </motion.div>
       </div>
     );
   }
@@ -146,29 +155,46 @@ export default function Auth() {
   const features = [
     { icon: FileText, title: "Easy Submission", desc: "Report issues in just a few clicks" },
     { icon: Activity, title: "Real-time Tracking", desc: "Follow your complaint status live" },
-    { icon: Sparkles, title: "Kwame AI Assistant", desc: "Get smart guidance instantly" },
+    { icon: Sparkles, title: "Kwame AI Assistant", desc: "Get smart guidance instantly", featured: true },
     { icon: ShieldCheck, title: "Secure & Transparent", desc: "Your data stays private and safe" },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
+    <div className="min-h-screen bg-muted/30">
       <div className="mx-auto grid min-h-screen max-w-7xl grid-cols-1 lg:grid-cols-2">
         {/* Left: Branding */}
-        <div className="relative flex flex-col justify-between p-8 lg:p-12 overflow-hidden">
-          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
-          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl -z-10" />
-          <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-primary/10 blur-3xl -z-10" />
-
+        <motion.div
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="relative flex flex-col justify-between p-8 lg:p-12 overflow-hidden lg:border-r"
+          style={{
+            backgroundImage: "radial-gradient(hsl(var(--foreground) / 0.08) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        >
+          {/* Desaturated logo watermark, isolated on its own layer so the grayscale filter
+              doesn't affect the dot-grid texture or any content stacked above it */}
+          <div
+            className="pointer-events-none absolute inset-0 -z-10 opacity-[0.06]"
+            style={{
+              backgroundImage: `url(${logoWatermark})`,
+              backgroundSize: "140% auto",
+              backgroundPosition: "center 65%",
+              backgroundRepeat: "no-repeat",
+              filter: "grayscale(1) contrast(1.1)",
+            }}
+          />
           <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-foreground">
+              <GraduationCap className="h-5 w-5 text-background" />
             </div>
-            <span className="font-semibold text-lg">SCITS</span>
+            <span className="font-semibold text-lg tracking-tight">SCITS</span>
           </div>
 
           <div className="py-10 space-y-6 lg:space-y-8">
             <div className="space-y-3">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-tight">
                 Student Complaint & Issue Tracking System
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-md">
@@ -177,35 +203,58 @@ export default function Auth() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 max-w-xl">
-              {features.map((f) => (
-                <div
+              {features.map((f, i) => (
+                <motion.div
                   key={f.title}
-                  className="flex items-start gap-3 rounded-xl border bg-card/50 backdrop-blur p-3 shadow-sm"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: 0.15 + i * 0.06 }}
+                  whileHover={{ y: -2 }}
+                  className={`flex items-start gap-3 rounded-xl border p-3 shadow-elevation-sm transition-shadow duration-200 hover:shadow-elevation-md ${
+                    f.featured ? "bg-foreground text-background border-foreground" : "bg-card"
+                  }`}
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                      f.featured ? "bg-background/15 text-background" : "bg-secondary text-foreground"
+                    }`}
+                  >
                     <f.icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium text-sm">{f.title}</p>
-                    <p className="text-xs text-muted-foreground">{f.desc}</p>
+                    <p className={`font-medium text-sm flex items-center gap-1.5 ${f.featured ? "text-background" : ""}`}>
+                      {f.title}
+                      {f.featured && (
+                        <span className="rounded-full bg-background/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide">
+                          AI
+                        </span>
+                      )}
+                    </p>
+                    <p className={`text-xs ${f.featured ? "text-background/70" : "text-muted-foreground"}`}>{f.desc}</p>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
 
           <div className="hidden lg:flex gap-4 text-xs text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-foreground transition-colors duration-150">Privacy Policy</a>
             <span>·</span>
-            <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-foreground transition-colors duration-150">Terms of Service</a>
           </div>
-        </div>
+        </motion.div>
 
         {/* Right: Auth form */}
         <div className="flex items-center justify-center p-4 sm:p-8 lg:p-12">
-          <Card className="w-full max-w-md shadow-xl border-border/60">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+            className="w-full max-w-md"
+          >
+          <Card className="shadow-elevation-lg border-border/60">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl">{isLogin ? "Welcome back" : "Create your account"}</CardTitle>
+              <CardTitle className="text-2xl tracking-tight">{isLogin ? "Welcome back" : "Create your account"}</CardTitle>
               <CardDescription>
                 {isLogin ? "Sign in to access your dashboard" : "Register as a new student to get started"}
               </CardDescription>
@@ -315,20 +364,21 @@ export default function Auth() {
                 )}
               </CardContent>
               <CardFooter className="flex flex-col gap-3">
-                <Button type="submit" className="w-full h-11 text-base" disabled={loading}>
+                <Button type="submit" className="w-full h-11 text-base shadow-elevation-sm hover:shadow-elevation-md transition-shadow duration-200" disabled={loading}>
                   {loading ? "Please wait..." : isLogin ? "Sign In" : "Create Account"}
                 </Button>
                 <button
                   type="button"
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-150"
                   onClick={() => setIsLogin(!isLogin)}
                 >
                   {isLogin ? "Don't have an account? " : "Already have an account? "}
-                  <span className="text-primary font-medium">{isLogin ? "Sign up" : "Sign in"}</span>
+                  <span className="text-foreground font-medium">{isLogin ? "Sign up" : "Sign in"}</span>
                 </button>
               </CardFooter>
             </form>
           </Card>
+          </motion.div>
         </div>
 
         {/* Mobile footer */}

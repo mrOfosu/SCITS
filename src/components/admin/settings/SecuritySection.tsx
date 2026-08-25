@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -45,16 +46,16 @@ export default function SecuritySection() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-foreground">Security Settings</h2>
+        <h2 className="text-lg font-semibold tracking-tight text-foreground">Security Settings</h2>
         <p className="text-sm text-muted-foreground">Configure system security and access policies</p>
       </div>
 
       {/* Password Policy */}
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base tracking-tight flex items-center gap-2">
             <Lock className="h-4 w-4 text-muted-foreground" />
             Password Policy
           </CardTitle>
@@ -89,9 +90,9 @@ export default function SecuritySection() {
       </Card>
 
       {/* Session & Lockout */}
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base tracking-tight flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
             Session & Lockout
           </CardTitle>
@@ -133,9 +134,9 @@ export default function SecuritySection() {
       </Card>
 
       {/* Login Activity */}
-      <Card>
+      <Card className="shadow-elevation-sm">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base flex items-center gap-2">
+          <CardTitle className="text-base tracking-tight flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
             Login Activity
           </CardTitle>
@@ -148,12 +149,20 @@ export default function SecuritySection() {
         </CardContent>
       </Card>
 
-      {dirty && (
-        <div className="flex gap-3">
-          <Button onClick={handleSave}>Save Settings</Button>
-          <Button variant="outline" onClick={() => { setPrefs(defaultSecurityPrefs); setDirty(false); }}>Reset</Button>
-        </div>
-      )}
+      <AnimatePresence>
+        {dirty && (
+          <motion.div
+            initial={{ opacity: 0, y: 6, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+            className="flex gap-3"
+          >
+            <Button onClick={handleSave} className="shadow-elevation-sm">Save Settings</Button>
+            <Button variant="outline" onClick={() => { setPrefs(defaultSecurityPrefs); setDirty(false); }}>Reset</Button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

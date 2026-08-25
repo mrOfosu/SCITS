@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { User, Palette, Settings, Tags, Users, Bell, Shield, Info } from "lucide-react";
 import ProfileAccountSection from "@/components/admin/settings/ProfileAccountSection";
@@ -39,29 +40,41 @@ export default function AdminSettings() {
   const ActiveComponent = sectionComponents[active];
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="space-y-5"
+    >
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">Configure system preferences and manage your account</p>
+        <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Configure system preferences and manage your account</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col lg:flex-row gap-5 lg:gap-6">
         {/* Settings Sidebar */}
         <nav className="lg:w-56 shrink-0">
-          <div className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
+          <div className="flex lg:flex-col gap-1 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0 lg:rounded-lg lg:border lg:bg-card lg:p-1.5 lg:shadow-elevation-sm">
             {sections.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
                 onClick={() => setActive(id)}
                 className={cn(
-                  "flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors text-left",
+                  "relative flex items-center gap-2 whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 text-left shrink-0",
                   active === id
-                    ? "bg-secondary text-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground"
                 )}
               >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="hidden sm:inline">{label}</span>
+                {active === id && (
+                  <motion.span
+                    layoutId="settings-nav-active"
+                    className="absolute inset-0 rounded-md bg-secondary"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  />
+                )}
+                <Icon className="relative z-10 h-4 w-4 shrink-0" />
+                <span className="relative z-10 hidden sm:inline">{label}</span>
               </button>
             ))}
           </div>
@@ -69,9 +82,19 @@ export default function AdminSettings() {
 
         {/* Content Area */}
         <div className="flex-1 min-w-0">
-          <ActiveComponent />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={active}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <ActiveComponent />
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
