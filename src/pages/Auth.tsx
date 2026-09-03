@@ -160,7 +160,7 @@ export default function Auth() {
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-[58%] -z-10 w-[85%] max-w-[560px] -translate-x-1/2 -translate-y-1/2 aspect-[16/9] bg-contain bg-center bg-no-repeat opacity-[0.07] grayscale"
+            className="pointer-events-none absolute left-1/2 top-[58%] -z-10 w-[95%] max-w-[640px] -translate-x-1/2 -translate-y-1/2 aspect-[16/9] bg-contain bg-center bg-no-repeat opacity-[0.15] grayscale"
             style={{ backgroundImage: `url(${logoWatermark.url})` }}
           />
           <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl -z-10" />
