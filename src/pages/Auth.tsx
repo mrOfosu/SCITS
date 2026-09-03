@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import logoWatermark from "@/assets/website_logo.png.asset.json";
-import scitsIcon from "@/assets/scits_icon.png.asset.json";
+import scitsIcon from "@/assets/scits_logo_mark.png.asset.json";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -172,7 +172,7 @@ export default function Auth() {
             <img
               src={scitsIcon.url}
               alt="SCITS logo"
-              className="h-11 w-11 rounded-xl shadow-sm"
+              className="h-12 w-12 object-contain"
             />
             <span className="font-semibold text-lg tracking-tight">SCITS</span>
           </div>
