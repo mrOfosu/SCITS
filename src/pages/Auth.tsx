@@ -159,45 +159,62 @@ export default function Auth() {
         {/* Left: Branding */}
         <div className="relative flex flex-col justify-between p-8 lg:p-12 overflow-hidden">
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
+
+          {/* Animated ambient background */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+            <div className="absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 animate-spin-slow rounded-full border border-dashed border-brand/25" />
+            <div className="absolute left-1/2 top-1/2 h-[380px] w-[380px] -translate-x-1/2 -translate-y-1/2 animate-spin-slower rounded-full border border-brand-teal/25" />
+            <div className="absolute left-1/2 top-1/2 h-[720px] w-[720px] -translate-x-1/2 -translate-y-1/2 animate-spin-slower rounded-full border border-dashed border-brand/10" />
+            <div className="absolute left-[14%] top-[26%] animate-float text-brand/30">
+              <FileText className="h-7 w-7" />
+            </div>
+            <div className="absolute right-[16%] top-[38%] animate-float text-brand-teal/30 [animation-delay:1.5s]">
+              <ShieldCheck className="h-8 w-8" />
+            </div>
+            <div className="absolute bottom-[22%] left-[26%] animate-float text-brand/25 [animation-delay:3s]">
+              <Activity className="h-6 w-6" />
+            </div>
+            <div className="absolute -top-24 -left-24 h-72 w-72 animate-pulse-soft rounded-full bg-brand/20 blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-72 w-72 animate-pulse-soft rounded-full bg-brand-teal/20 blur-3xl [animation-delay:2s]" />
+          </div>
+
           <div
             aria-hidden="true"
             className="pointer-events-none absolute left-1/2 top-[58%] -z-10 w-[100%] max-w-[720px] -translate-x-1/2 -translate-y-1/2 aspect-[16/9] bg-contain bg-center bg-no-repeat opacity-[0.32] saturate-50 dark:opacity-[0.18] dark:grayscale"
             style={{ backgroundImage: `url(${logoWatermark.url})` }}
           />
-          <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl -z-10" />
-          <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-primary/10 blur-3xl -z-10" />
 
-
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 animate-fade-in">
             <img
               src={scitsIcon.url}
               alt="SCITS logo"
               className="h-12 w-12 object-contain"
             />
-            <span className="font-semibold text-lg tracking-tight">SCITS</span>
+            <span className="font-display font-semibold text-lg tracking-tight">SCITS</span>
           </div>
 
           <div className="py-10 space-y-6 lg:space-y-8">
             <div className="space-y-3">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-tight">
-                Student Complaint & Issue Tracking System
+              <h1 className="font-display text-3xl sm:text-4xl lg:text-[3.25rem] font-extrabold tracking-tight leading-[1.08] bg-[image:var(--gradient-brand)] bg-clip-text text-transparent animate-fade-in">
+                Student Complaint &amp; Issue Tracking System
               </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-md">
+              <p className="text-base sm:text-lg text-muted-foreground max-w-md animate-fade-in [animation-delay:120ms] opacity-0">
                 A smart platform for students to report, track, and resolve issues efficiently.
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 max-w-xl">
-              {features.map((f) => (
+              {features.map((f, i) => (
                 <div
                   key={f.title}
-                  className="flex items-start gap-3 rounded-xl border bg-card/50 backdrop-blur p-3 shadow-sm"
+                  style={{ animationDelay: `${200 + i * 90}ms` }}
+                  className="group flex items-start gap-3 rounded-xl border bg-card/60 backdrop-blur p-3 shadow-sm opacity-0 animate-fade-in transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-md"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand transition-transform duration-300 group-hover:scale-110">
                     <f.icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="font-medium text-sm">{f.title}</p>
+                    <p className="font-display font-medium text-sm">{f.title}</p>
                     <p className="text-xs text-muted-foreground">{f.desc}</p>
                   </div>
                 </div>
@@ -211,6 +228,7 @@ export default function Auth() {
             <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
           </div>
         </div>
+
 
         {/* Right: Auth form */}
         <div className="flex items-center justify-center p-4 sm:p-8 lg:p-12">

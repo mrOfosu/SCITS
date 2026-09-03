@@ -38,6 +38,12 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
+    /* Brand (matches logo/favicon: deep blue -> teal) */
+    --brand: 214 84% 42%;
+    --brand-deep: 222 76% 28%;
+    --brand-teal: 178 72% 40%;
+    --gradient-brand: linear-gradient(100deg, hsl(var(--brand-deep)), hsl(var(--brand)) 45%, hsl(var(--brand-teal)));
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -91,8 +97,14 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    --brand: 205 90% 58%;
+    --brand-deep: 214 70% 45%;
+    --brand-teal: 174 70% 48%;
+    --gradient-brand: linear-gradient(100deg, hsl(var(--brand-deep)), hsl(var(--brand)) 45%, hsl(var(--brand-teal)));
   }
 }
+
 
 @layer base {
   * {
