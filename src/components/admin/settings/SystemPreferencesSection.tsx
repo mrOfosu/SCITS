@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -47,16 +46,16 @@ export default function SystemPreferencesSection() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">System Preferences</h2>
+        <h2 className="text-xl font-semibold text-foreground">System Preferences</h2>
         <p className="text-sm text-muted-foreground">Configure how the complaint system operates</p>
       </div>
 
       {/* Default Priority */}
-      <Card className="shadow-elevation-sm">
+      <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-base tracking-tight flex items-center gap-2">
+          <CardTitle className="text-base flex items-center gap-2">
             <Settings className="h-4 w-4 text-muted-foreground" />
             Complaint Defaults
           </CardTitle>
@@ -99,9 +98,9 @@ export default function SystemPreferencesSection() {
       </Card>
 
       {/* Auto-assignment & Toggles */}
-      <Card className="shadow-elevation-sm">
+      <Card>
         <CardHeader className="pb-4">
-          <CardTitle className="text-base tracking-tight flex items-center gap-2">
+          <CardTitle className="text-base flex items-center gap-2">
             <Settings className="h-4 w-4 text-muted-foreground" />
             Automation & Features
           </CardTitle>
@@ -131,20 +130,12 @@ export default function SystemPreferencesSection() {
         </CardContent>
       </Card>
 
-      <AnimatePresence>
-        {dirty && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, height: 0 }}
-            animate={{ opacity: 1, y: 0, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="flex gap-3"
-          >
-            <Button onClick={() => setShowSaveConfirm(true)} className="shadow-elevation-sm">Save Preferences</Button>
-            <Button variant="outline" onClick={() => setShowResetConfirm(true)}>Reset</Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {dirty && (
+        <div className="flex gap-3">
+          <Button onClick={() => setShowSaveConfirm(true)}>Save Preferences</Button>
+          <Button variant="outline" onClick={() => setShowResetConfirm(true)}>Reset</Button>
+        </div>
+      )}
 
       <ConfirmDialog
         open={showSaveConfirm}

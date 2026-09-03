@@ -1,22 +1,29 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
 
 interface PageTransitionProps {
   children: ReactNode;
 }
 
 export default function PageTransition({ children }: PageTransitionProps) {
+  const [isVisible, setIsVisible] = useState(false);
   const location = useLocation();
 
+  useEffect(() => {
+    setIsVisible(false);
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
+
   return (
-    <motion.div
-      key={location.pathname}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+    <div 
+      className={`transition-all duration-300 ease-out ${
+        isVisible 
+          ? 'opacity-100 translate-y-0' 
+          : 'opacity-0 translate-y-2'
+      }`}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

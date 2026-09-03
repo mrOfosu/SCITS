@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -155,34 +154,23 @@ export default function SubmitComplaint() {
   return (
     <div className="mx-auto max-w-4xl">
       <SuccessAnimation show={showSuccess} onComplete={() => navigate("/")} />
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        className={showAssistant ? "grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]" : ""}
-      >
-        <Card className="shadow-elevation-sm">
+      <div className={showAssistant ? "grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px]" : ""}>
+        <Card>
           <CardHeader>
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl tracking-tight">Submit a Complaint</CardTitle>
+                <CardTitle>Submit a Complaint</CardTitle>
                 <CardDescription>It will be auto-routed to the correct GCTU department.</CardDescription>
               </div>
               {!showAssistant && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 text-xs rounded-full shrink-0"
-                  onClick={() => setShowAssistant(true)}
-                >
+                <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowAssistant(true)}>
                   <Bot className="h-3.5 w-3.5" /> Ask Kwame
                 </Button>
               )}
             </div>
           </CardHeader>
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-5">
-              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">Routing</p>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Faculty *</Label>
@@ -257,7 +245,6 @@ export default function SubmitComplaint() {
                 </div>
               </div>
 
-              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 pt-1">Details</p>
               <div className="space-y-2">
                 <Label htmlFor="subject">Subject *</Label>
                 <Input id="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Brief summary of your issue" required />
@@ -279,14 +266,13 @@ export default function SubmitComplaint() {
                 )}
               </div>
 
-              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70 pt-1">Attachment &amp; Privacy</p>
               <div className="space-y-2">
                 <Label>Attachment <span className="text-xs text-muted-foreground">(PDF or image, max 5MB)</span></Label>
                 {file ? (
-                  <div className="flex items-center gap-2 rounded-lg border p-2.5 text-sm bg-secondary/40">
-                    <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex items-center gap-2 rounded-md border p-2 text-sm">
+                    <Paperclip className="h-4 w-4 text-muted-foreground" />
                     <span className="flex-1 truncate">{file.name}</span>
-                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setFile(null)}>
+                    <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => setFile(null)}>
                       <X className="h-3 w-3" />
                     </Button>
                   </div>
@@ -295,7 +281,7 @@ export default function SubmitComplaint() {
                 )}
               </div>
 
-              <div className="flex items-center space-x-3 rounded-lg border p-3.5 bg-secondary/40">
+              <div className="flex items-center space-x-2 rounded-md border p-3 bg-muted/30">
                 <Checkbox id="anonymous" checked={isAnonymous} onCheckedChange={(c) => setIsAnonymous(c === true)} />
                 <div className="space-y-0.5">
                   <Label htmlFor="anonymous" className="text-sm font-medium cursor-pointer">Submit anonymously</Label>
@@ -303,11 +289,7 @@ export default function SubmitComplaint() {
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                className="w-full shadow-elevation-sm hover:shadow-elevation-md transition-shadow duration-200"
-                disabled={loading || !facultyId || !departmentId || !categoryId || !typeId || description.length < 20}
-              >
+              <Button type="submit" className="w-full" disabled={loading || !facultyId || !departmentId || !categoryId || !typeId || description.length < 20}>
                 {loading ? "Submitting..." : "Submit Complaint"}
               </Button>
             </CardContent>
@@ -336,7 +318,7 @@ export default function SubmitComplaint() {
             </div>
           </>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }

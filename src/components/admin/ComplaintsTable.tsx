@@ -41,24 +41,24 @@ function isOverdue(complaint: ComplaintWithProfile) {
 
 export default function ComplaintsTable({ complaints }: ComplaintsTableProps) {
   return (
-    <Card className="shadow-elevation-sm overflow-hidden">
+    <Card>
       <Table>
         <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="text-[11px] uppercase tracking-wider">Ref</TableHead>
-            <TableHead className="text-[11px] uppercase tracking-wider">Subject</TableHead>
-            <TableHead className="text-[11px] uppercase tracking-wider">Student</TableHead>
-            <TableHead className="text-[11px] uppercase tracking-wider">Category</TableHead>
-            <TableHead className="text-[11px] uppercase tracking-wider">Priority</TableHead>
-            <TableHead className="text-[11px] uppercase tracking-wider">Status</TableHead>
-            <TableHead className="text-[11px] uppercase tracking-wider">Date</TableHead>
+          <TableRow>
+            <TableHead>Ref</TableHead>
+            <TableHead>Subject</TableHead>
+            <TableHead>Student</TableHead>
+            <TableHead>Category</TableHead>
+            <TableHead>Priority</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Date</TableHead>
             <TableHead></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {complaints.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center text-muted-foreground py-10">
+              <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                 No complaints found.
               </TableCell>
             </TableRow>
@@ -66,7 +66,7 @@ export default function ComplaintsTable({ complaints }: ComplaintsTableProps) {
             complaints.map((c) => {
               const overdue = isOverdue(c);
               return (
-              <TableRow key={c.id} className={`transition-colors duration-150 ${overdue ? "bg-destructive/5 border-l-2 border-l-destructive hover:bg-destructive/10" : ""}`}>
+              <TableRow key={c.id} className={overdue ? "bg-destructive/5 border-l-2 border-l-destructive" : ""}>
                 <TableCell className="font-mono text-xs">
                   <div className="flex items-center gap-1.5">
                     {overdue && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0" />}
@@ -76,9 +76,9 @@ export default function ComplaintsTable({ complaints }: ComplaintsTableProps) {
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-1.5">
                     {c.subject}
-                    {c.attachment_url && <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                    {c.attachment_url && <Paperclip className="h-3.5 w-3.5 text-muted-foreground" />}
                     {overdue && (
-                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0 shrink-0">
+                      <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
                         Overdue
                       </Badge>
                     )}
@@ -90,7 +90,7 @@ export default function ComplaintsTable({ complaints }: ComplaintsTableProps) {
                     <p className="text-xs text-muted-foreground">{c.profiles?.student_id || "—"}</p>
                   </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{categoryLabels[c.category] || c.category}</TableCell>
+                <TableCell>{categoryLabels[c.category] || c.category}</TableCell>
                 <TableCell>
                   <Badge variant={priorityConfig[c.priority]?.variant || "outline"}>
                     {priorityConfig[c.priority]?.label || c.priority}
@@ -104,9 +104,7 @@ export default function ComplaintsTable({ complaints }: ComplaintsTableProps) {
                 <TableCell className="text-muted-foreground">{new Date(c.created_at).toLocaleDateString()}</TableCell>
                 <TableCell>
                   <Link to={`/admin/complaint/${c.id}`}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                      <Eye className="h-4 w-4" />
-                    </Button>
+                    <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
                   </Link>
                 </TableCell>
               </TableRow>

@@ -1,5 +1,4 @@
 import { useEffect, useState, useMemo } from "react";
-import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import ExportButtons from "@/components/admin/ExportButtons";
 import AdminCharts from "@/components/admin/AdminCharts";
@@ -39,20 +38,15 @@ export default function AdminReports() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="space-y-5"
-    >
-      <div className="flex items-center justify-between gap-3">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight">Reports</h1>
-          <p className="text-sm sm:text-base text-muted-foreground">Export and analyze complaint data</p>
+          <h1 className="text-2xl font-bold">Reports</h1>
+          <p className="text-muted-foreground">Export and analyze complaint data</p>
         </div>
         <ExportButtons complaints={complaints} />
       </div>
       <AdminCharts complaints={complaints} />
-    </motion.div>
+    </div>
   );
 }

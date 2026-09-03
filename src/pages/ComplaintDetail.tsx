@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from "react";
-import { motion } from "framer-motion";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,9 +32,9 @@ function StudentDetailCard({ userId, isAnonymous }: { userId: string; isAnonymou
   if (!profile) return null;
 
   return (
-    <div className="rounded-lg border bg-secondary/40 p-3.5 space-y-2">
+    <div className="rounded-md border bg-muted/30 p-3 space-y-2">
       <div className="flex items-center justify-between">
-        <h4 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">Student Details</h4>
+        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Student Details</h4>
         {isAnonymous && <Badge variant="outline" className="text-[10px]">Anonymous Submission</Badge>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
@@ -391,7 +390,10 @@ export default function ComplaintDetail() {
   const resolvedAt = (complaint as unknown as { resolved_at: string | null }).resolved_at;
   const weekMs = 7 * 24 * 60 * 60 * 1000;
   const msSinceResolved = resolvedAt ? Date.now() - new Date(resolvedAt).getTime() : 0;
-  const canStudentDelete = isOwner && complaint.status === "resolved" && resolvedAt !== null && msSinceResolved >= weekMs;
+  const canDeleteAfterResolved = isOwner && complaint.status === "resolved" && resolvedAt !== null && msSinceResolved >= weekMs;
+  const canDeleteWhenClosed = isOwner && complaint.status === "closed";
+  const canStudentDelete = canDeleteAfterResolved || canDeleteWhenClosed;
+  const showStudentDeleteCard = isOwner && (complaint.status === "resolved" || complaint.status === "closed");
   const daysUntilDeletable = resolvedAt && msSinceResolved < weekMs
     ? Math.ceil((weekMs - msSinceResolved) / (24 * 60 * 60 * 1000))
     : 0;
@@ -410,254 +412,328 @@ export default function ComplaintDetail() {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className="mx-auto max-w-2xl space-y-5"
-    >
+    <div className="mx-auto max-w-6xl space-y-6">
       {isAdmin && <AdminBreadcrumb />}
       <div className="flex items-center justify-between">
         {isAdmin ? (
-          <Button variant="ghost" size="sm" onClick={() => navigate("/admin/complaints")} className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/admin/complaints")} className="gap-1.5">
             <ArrowLeft className="h-4 w-4" /> Back to Complaints
           </Button>
         ) : (
-          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="gap-1.5">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
         )}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <ComplaintPdfExport complaint={complaint} responses={responses} />
           {!isAdmin && (
             <Button variant="ghost" size="icon" onClick={toggleBookmark} className="h-8 w-8">
-              {bookmarked ? <BookmarkCheck className="h-4 w-4 text-foreground" /> : <Bookmark className="h-4 w-4" />}
+              {bookmarked ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
             </Button>
           )}
         </div>
       </div>
 
-      <Card className="shadow-elevation-sm">
-        <CardHeader>
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <CardTitle className="text-lg tracking-tight break-words">{complaint.subject}</CardTitle>
-              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                {complaint.reference_id && (
-                  <span className="font-mono text-xs font-medium text-foreground">{complaint.reference_id}</span>
-                )}
-                <span>·</span>
-                <span>{categoryLabels[complaint.category]}</span>
-                {complaint.sub_category && (
-                  <>
-                    <span>›</span>
-                    <span className="capitalize">{complaint.sub_category}</span>
-                  </>
-                )}
-                <span>·</span>
-                <span>{new Date(complaint.created_at).toLocaleDateString()}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Badge variant={priorityConfig[complaint.priority]?.variant || "outline"}>
-                {priorityConfig[complaint.priority]?.label || complaint.priority}
-              </Badge>
-              <Badge variant={statusConfig[complaint.status]?.variant || "outline"}>
-                {statusConfig[complaint.status]?.label || complaint.status}
-              </Badge>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Admin: full student details */}
-          {isAdmin && <StudentDetailCard userId={complaint.user_id} isAnonymous={complaint.is_anonymous} />}
-
-          {/* Anonymous badge for students */}
-          {!isAdmin && complaint.is_anonymous && (
-            <div className="flex items-center gap-2 rounded-lg border bg-secondary/40 p-2.5 text-xs text-muted-foreground">
-              <User className="h-3.5 w-3.5" />
-              This complaint was submitted anonymously
-            </div>
-          )}
-
-          {/* Info row: estimated time, last updated, assigned admin */}
-          <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground border-b pb-3">
-            <span className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" />
-              Est. resolution: {estimatedResolutionLabel(complaint.estimated_resolution_hours)}
-            </span>
-            <span className="flex items-center gap-1">
-              <RefreshCw className="h-3.5 w-3.5" />
-              Updated {timeAgo(complaint.updated_at)}
-            </span>
-            {assignedAdmin && (
-              <span className="flex items-center gap-1">
-                <User className="h-3.5 w-3.5" />
-                Assigned to: {assignedAdmin}
-              </span>
-            )}
-          </div>
-
-          {/* Handler / Escalation status */}
-          {(() => {
-            const c = complaint as unknown as { current_handler_role: string | null; escalation_level: number | null; escalated_at: string | null; escalation_reason: string | null };
-            const role = c.current_handler_role;
-            const escalated = (c.escalation_level || 0) >= 1;
-            return (
-              <div className={`rounded-lg border p-3.5 text-sm ${escalated ? "border-amber-500/30 bg-amber-500/5" : "bg-secondary/40"}`}>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {escalated ? <TrendingUp className="h-4 w-4 text-amber-600" /> : <Shield className="h-4 w-4 text-muted-foreground" />}
-                  <span className="font-medium">Current Handler:</span>
-                  <span>{currentHandler || "Unassigned"}</span>
-                  {role && (
-                    <Badge variant={escalated ? "default" : "outline"} className="capitalize">
-                      {role.replace("_", " ")}
-                    </Badge>
-                  )}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Main column */}
+        <div className="lg:col-span-2 space-y-6 min-w-0">
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-4 flex-wrap">
+                <div className="min-w-0">
+                  <CardTitle className="break-words">{complaint.subject}</CardTitle>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                    {complaint.reference_id && (
+                      <span className="font-mono text-xs font-medium text-foreground">{complaint.reference_id}</span>
+                    )}
+                    <span>·</span>
+                    <span>{categoryLabels[complaint.category]}</span>
+                    {complaint.sub_category && (
+                      <>
+                        <span>›</span>
+                        <span className="capitalize">{complaint.sub_category}</span>
+                      </>
+                    )}
+                    <span>·</span>
+                    <span>{new Date(complaint.created_at).toLocaleDateString()}</span>
+                  </div>
                 </div>
-                {escalated && c.escalated_at && (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Escalated to HOD {timeAgo(c.escalated_at)}{c.escalation_reason ? ` — ${c.escalation_reason}` : ""}
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge variant={priorityConfig[complaint.priority]?.variant || "outline"}>
+                    {priorityConfig[complaint.priority]?.label || complaint.priority}
+                  </Badge>
+                  <Badge variant={statusConfig[complaint.status]?.variant || "outline"}>
+                    {statusConfig[complaint.status]?.label || complaint.status}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {isAdmin && <StudentDetailCard userId={complaint.user_id} isAnonymous={complaint.is_anonymous} />}
+
+              {!isAdmin && complaint.is_anonymous && (
+                <div className="flex items-center gap-2 rounded-md border border-muted bg-muted/40 p-2 text-xs text-muted-foreground">
+                  <User className="h-3.5 w-3.5" />
+                  This complaint was submitted anonymously
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground border-b pb-3">
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  Est. resolution: {estimatedResolutionLabel(complaint.estimated_resolution_hours)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Updated {timeAgo(complaint.updated_at)}
+                </span>
+                {assignedAdmin && (
+                  <span className="flex items-center gap-1">
+                    <User className="h-3.5 w-3.5" />
+                    Assigned to: {assignedAdmin}
+                  </span>
+                )}
+              </div>
+
+              {(() => {
+                const c = complaint as unknown as { current_handler_role: string | null; escalation_level: number | null; escalated_at: string | null; escalation_reason: string | null };
+                const role = c.current_handler_role;
+                const escalated = (c.escalation_level || 0) >= 1;
+                return (
+                  <div className={`rounded-md border p-3 text-sm ${escalated ? "border-amber-500/30 bg-amber-500/5" : "bg-muted/30"}`}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {escalated ? <TrendingUp className="h-4 w-4 text-amber-600" /> : <Shield className="h-4 w-4 text-muted-foreground" />}
+                      <span className="font-medium">Current Handler:</span>
+                      <span>{currentHandler || "Unassigned"}</span>
+                      {role && (
+                        <Badge variant={escalated ? "default" : "outline"} className="capitalize">
+                          {role.replace("_", " ")}
+                        </Badge>
+                      )}
+                    </div>
+                    {escalated && c.escalated_at && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Escalated to HOD {timeAgo(c.escalated_at)}{c.escalation_reason ? ` — ${c.escalation_reason}` : ""}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {complaint.status === "rejected" && (complaint as any).rejection_reason && (
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="destructive">Rejected</Badge>
+                    {(complaint as any).rejected_at && (
+                      <span className="text-xs text-muted-foreground">{timeAgo((complaint as any).rejected_at)}</span>
+                    )}
+                  </div>
+                  <p className="text-sm"><span className="font-medium">Reason: </span>{(complaint as any).rejection_reason}</p>
+                </div>
+              )}
+
+              <p className="whitespace-pre-wrap text-sm break-words">{complaint.description}</p>
+              {complaint.attachment_url && (
+                <AttachmentPreview attachmentUrl={complaint.attachment_url} />
+              )}
+            </CardContent>
+          </Card>
+
+          {isAdmin && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold">
+                  <Sparkles className="h-4 w-4 text-primary" /> Quick Suggestions
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={generateAiSummary}
+                  disabled={generatingSummary}
+                >
+                  <RefreshCw className={`h-3 w-3 ${generatingSummary ? "animate-spin" : ""}`} />
+                  {aiSummary ? "Regenerate" : "Generate"}
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {aiSummary ? (
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
+                    <ReactMarkdown>{aiSummary}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    {generatingSummary ? "Generating suggestions..." : "No suggestions yet. Click Generate to create one."}
                   </p>
                 )}
-              </div>
-            );
-          })()}
-
-          {/* Rejection reason banner */}
-          {complaint.status === "rejected" && (complaint as any).rejection_reason && (
-            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
-              <div className="flex items-center gap-2 mb-1">
-                <Badge variant="destructive">Rejected</Badge>
-                {(complaint as any).rejected_at && (
-                  <span className="text-xs text-muted-foreground">{timeAgo((complaint as any).rejected_at)}</span>
-                )}
-              </div>
-              <p className="text-sm"><span className="font-medium">Reason: </span>{(complaint as any).rejection_reason}</p>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
-
-
-          <p className="whitespace-pre-wrap text-sm">{complaint.description}</p>
-          {complaint.attachment_url && (
-            <AttachmentPreview attachmentUrl={complaint.attachment_url} />
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Quick Suggestions for Admins */}
-      {isAdmin && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <Sparkles className="h-4 w-4 text-primary" /> Quick Suggestions
-            </CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-xs"
-              onClick={generateAiSummary}
-              disabled={generatingSummary}
-            >
-              <RefreshCw className={`h-3 w-3 ${generatingSummary ? "animate-spin" : ""}`} />
-              {aiSummary ? "Regenerate" : "Generate"}
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {aiSummary ? (
-              <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
-                <ReactMarkdown>{aiSummary}</ReactMarkdown>
-              </div>
+          {/* Responses */}
+          <div className="space-y-3">
+            <h3 className="font-semibold">Responses</h3>
+            {responses.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No responses yet.</p>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                {generatingSummary ? "Generating suggestions..." : "No suggestions yet. Click Generate to create one."}
-              </p>
+              responses.map((r) => (
+                <Card key={r.id}>
+                  <CardContent className="p-4">
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span className="font-medium">{r.profiles?.display_name || "Unknown"}</span>
+                      <span className="text-muted-foreground">{timeAgo(r.created_at)}</span>
+                    </div>
+                    <p className="whitespace-pre-wrap text-sm break-words">{r.message}</p>
+                  </CardContent>
+                </Card>
+              ))
             )}
-          </CardContent>
-        </Card>
-      )}
+          </div>
 
-      {/* Feedback prompt for students on resolved complaints */}
-      {showFeedback && (
-        <FeedbackPrompt
-          complaintId={complaint.id}
-          existingFeedback={feedback}
-          onFeedbackSubmitted={fetchData}
-        />
-      )}
+          {/* Add response */}
+          <Card>
+            <CardContent className="space-y-3 p-4">
+              <Textarea
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder={isAdmin ? "Write a response to the student..." : "Add a comment..."}
+                rows={3}
+              />
+              <Button onClick={handleSendResponse} disabled={sending || !newMessage.trim()}>
+                {sending ? "Sending..." : "Send Response"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Reopen button */}
-      {canReopen && (
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <p className="text-sm text-muted-foreground">Not satisfied? You can reopen this complaint.</p>
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={handleReopen} disabled={transitioning}>
-              <RotateCcw className="h-4 w-4" /> Reopen Complaint
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Student delete (available 7 days after resolution) */}
-      {isOwner && complaint.status === "resolved" && (
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            {canStudentDelete ? (
-              <>
-                <p className="text-sm text-muted-foreground">This complaint was resolved over a week ago. You can permanently delete it.</p>
-                <Button size="sm" variant="destructive" className="gap-1.5" onClick={() => setShowDeleteConfirm(true)} disabled={deleting}>
-                  <Trash2 className="h-4 w-4" /> {deleting ? "Deleting..." : "Delete"}
-                </Button>
-              </>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                You'll be able to delete this complaint in {daysUntilDeletable} day{daysUntilDeletable === 1 ? "" : "s"}.
-              </p>
-            )}
-            <ConfirmDialog
-              open={showDeleteConfirm}
-              onOpenChange={setShowDeleteConfirm}
-              title="Delete Complaint"
-              description="This will permanently remove the complaint and all its responses, activity, and bookmarks. This action cannot be undone."
-              confirmLabel="Delete"
-              onConfirm={() => { setShowDeleteConfirm(false); handleDelete(); }}
+        {/* Side column */}
+        <aside className="space-y-4 min-w-0">
+          {showFeedback && (
+            <FeedbackPrompt
+              complaintId={complaint.id}
+              existingFeedback={feedback}
+              onFeedbackSubmitted={fetchData}
             />
-          </CardContent>
-        </Card>
-      )}
+          )}
 
+          {canReopen && (
+            <Card>
+              <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between p-4">
+                <p className="text-sm text-muted-foreground">Not satisfied? You can reopen this complaint.</p>
+                <Button size="sm" variant="outline" className="gap-1.5 shrink-0" onClick={handleReopen} disabled={transitioning}>
+                  <RotateCcw className="h-4 w-4" /> Reopen
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Escalate to HOD (department admin only, not yet escalated, not resolved/closed) */}
-      {isAdmin && (myRoles.includes("department_admin") || myRoles.includes("faculty_admin") || myRoles.includes("admin") || myRoles.includes("super_admin")) && (complaint as any).escalation_level === 0 && complaint.status !== "resolved" && complaint.status !== "closed" && (
-        <Card>
-          <CardContent className="flex items-center justify-between gap-3 p-4">
-            <div>
-              <p className="text-sm font-medium">Need higher review?</p>
-              <p className="text-xs text-muted-foreground">Escalate this complaint to the Head of Department.</p>
-            </div>
-            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setShowEscalateDialog(true)}>
-              <TrendingUp className="h-4 w-4" /> Escalate to HOD
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          {showStudentDeleteCard && (
+            <Card>
+              <CardContent className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between p-4">
+                {canStudentDelete ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      {complaint.status === "closed"
+                        ? "This complaint is closed. You can permanently delete it."
+                        : "This complaint was resolved over a week ago. You can permanently delete it."}
+                    </p>
+                    <Button size="sm" variant="destructive" className="gap-1.5 shrink-0" onClick={() => setShowDeleteConfirm(true)} disabled={deleting}>
+                      <Trash2 className="h-4 w-4" /> {deleting ? "Deleting..." : "Delete"}
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    You'll be able to delete this complaint in {daysUntilDeletable} day{daysUntilDeletable === 1 ? "" : "s"}, or immediately once it is closed.
+                  </p>
+                )}
+                <ConfirmDialog
+                  open={showDeleteConfirm}
+                  onOpenChange={setShowDeleteConfirm}
+                  title="Delete Complaint"
+                  description="This will permanently remove the complaint and all its responses, activity, and bookmarks. This action cannot be undone."
+                  confirmLabel="Delete"
+                  onConfirm={() => { setShowDeleteConfirm(false); handleDelete(); }}
+                />
+              </CardContent>
+            </Card>
+          )}
 
-      {/* Reject complaint (admin only, only when pending or in_review) */}
-      {isAdmin && (complaint.status === "pending" || complaint.status === "in_review") && (
-        <Card className="border-destructive/30">
-          <CardContent className="flex items-center justify-between gap-3 p-4">
-            <div>
-              <p className="text-sm font-medium">Reject this complaint</p>
-              <p className="text-xs text-muted-foreground">Decline with a reason. The student will be notified.</p>
-            </div>
-            <Button size="sm" variant="destructive" onClick={() => setShowRejectDialog(true)}>
-              Reject
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+          {isAdmin && (myRoles.includes("department_admin") || myRoles.includes("faculty_admin") || myRoles.includes("admin") || myRoles.includes("super_admin")) && (complaint as any).escalation_level === 0 && complaint.status !== "resolved" && complaint.status !== "closed" && (
+            <Card>
+              <CardContent className="flex flex-col gap-3 p-4">
+                <div>
+                  <p className="text-sm font-medium">Need higher review?</p>
+                  <p className="text-xs text-muted-foreground">Escalate this complaint to the Head of Department.</p>
+                </div>
+                <Button size="sm" variant="outline" className="gap-1.5 w-full" onClick={() => setShowEscalateDialog(true)}>
+                  <TrendingUp className="h-4 w-4" /> Escalate to HOD
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
+          {isAdmin && (complaint.status === "pending" || complaint.status === "in_review") && (
+            <Card className="border-destructive/30">
+              <CardContent className="flex flex-col gap-3 p-4">
+                <div>
+                  <p className="text-sm font-medium">Reject this complaint</p>
+                  <p className="text-xs text-muted-foreground">Decline with a reason. The student will be notified.</p>
+                </div>
+                <Button size="sm" variant="destructive" className="w-full" onClick={() => setShowRejectDialog(true)}>
+                  Reject
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {isAdmin && nextStatus && (
+            <Card>
+              <CardContent className="flex flex-col gap-3 p-4">
+                <div className="flex items-center gap-2 text-sm flex-wrap">
+                  <Badge variant={statusConfig[complaint.status]?.variant || "outline"}>
+                    {statusConfig[complaint.status]?.label}
+                  </Badge>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <Badge variant={statusConfig[nextStatus]?.variant || "outline"}>
+                    {statusConfig[nextStatus]?.label}
+                  </Badge>
+                </div>
+                <Button size="sm" className="w-full" onClick={() => setShowStatusConfirm(true)} disabled={transitioning}>
+                  {transitioning ? "Updating..." : transitionLabels[nextStatus] || "Advance"}
+                </Button>
+                <ConfirmDialog
+                  open={showStatusConfirm}
+                  onOpenChange={setShowStatusConfirm}
+                  title="Change Complaint Status"
+                  description={`Are you sure you want to change the status from "${statusConfig[complaint.status]?.label}" to "${statusConfig[nextStatus]?.label}"? This action will be logged and the student will be notified.`}
+                  confirmLabel={transitionLabels[nextStatus] || "Advance"}
+                  onConfirm={() => { setShowStatusConfirm(false); handleTransition(); }}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {isAdmin && !nextStatus && complaint.status === "closed" && (
+            <Card>
+              <CardContent className="p-4 text-center text-sm text-muted-foreground">
+                This complaint is closed. No further status changes are available.
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Timeline */}
+          <Card>
+            <CardContent className="p-4">
+              <ActivityLog activity={activity} />
+              {activity.length === 0 && (
+                <p className="text-sm text-muted-foreground">No activity yet.</p>
+              )}
+            </CardContent>
+          </Card>
+        </aside>
+      </div>
+
+      {/* Dialogs */}
       <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
         <DialogContent>
           <DialogHeader>
@@ -682,7 +758,6 @@ export default function ComplaintDetail() {
         </DialogContent>
       </Dialog>
 
-
       <Dialog open={showEscalateDialog} onOpenChange={setShowEscalateDialog}>
         <DialogContent>
           <DialogHeader>
@@ -706,92 +781,7 @@ export default function ComplaintDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-
-      {/* Admin status workflow */}
-      {isAdmin && nextStatus && (
-        <Card>
-          <CardContent className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-2 text-sm">
-              <Badge variant={statusConfig[complaint.status]?.variant || "outline"}>
-                {statusConfig[complaint.status]?.label}
-              </Badge>
-              <ArrowRight className="h-4 w-4 text-muted-foreground" />
-              <Badge variant={statusConfig[nextStatus]?.variant || "outline"}>
-                {statusConfig[nextStatus]?.label}
-              </Badge>
-            </div>
-            <Button size="sm" onClick={() => setShowStatusConfirm(true)} disabled={transitioning}>
-              {transitioning ? "Updating..." : transitionLabels[nextStatus] || "Advance"}
-            </Button>
-            <ConfirmDialog
-              open={showStatusConfirm}
-              onOpenChange={setShowStatusConfirm}
-              title="Change Complaint Status"
-              description={`Are you sure you want to change the status from "${statusConfig[complaint.status]?.label}" to "${statusConfig[nextStatus]?.label}"? This action will be logged and the student will be notified.`}
-              confirmLabel={transitionLabels[nextStatus] || "Advance"}
-              onConfirm={() => { setShowStatusConfirm(false); handleTransition(); }}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {isAdmin && !nextStatus && complaint.status === "closed" && (
-        <Card>
-          <CardContent className="p-4 text-center text-sm text-muted-foreground">
-            This complaint is closed. No further status changes are available.
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Activity log */}
-      <ActivityLog activity={activity} />
-
-      {/* Responses */}
-      <div className="space-y-3">
-        <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground/70">Responses</h3>
-        {responses.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No responses yet.</p>
-        ) : (
-          responses.map((r, i) => (
-            <motion.div
-              key={r.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1], delay: Math.min(i * 0.04, 0.24) }}
-            >
-              <Card>
-                <CardContent className="p-4">
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="font-medium">{r.profiles?.display_name || "Unknown"}</span>
-                    <span className="text-muted-foreground">{timeAgo(r.created_at)}</span>
-                  </div>
-                  <p className="whitespace-pre-wrap text-sm">{r.message}</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))
-        )}
-      </div>
-
-      {/* Add response */}
-      <Card>
-        <CardContent className="space-y-3 p-4">
-          <Textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={isAdmin ? "Write a response to the student..." : "Add a comment..."}
-            rows={3}
-          />
-          <Button
-            onClick={handleSendResponse}
-            disabled={sending || !newMessage.trim()}
-            className="shadow-elevation-sm hover:shadow-elevation-md transition-shadow duration-200"
-          >
-            {sending ? "Sending..." : "Send Response"}
-          </Button>
-        </CardContent>
-      </Card>
-    </motion.div>
+    </div>
   );
 }
+
