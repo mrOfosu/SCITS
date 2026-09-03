@@ -156,8 +156,14 @@ export default function Auth() {
         {/* Left: Branding */}
         <div className="relative flex flex-col justify-between p-8 lg:p-12 overflow-hidden">
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-[58%] -z-10 w-[85%] max-w-[560px] -translate-x-1/2 -translate-y-1/2 aspect-[16/9] bg-contain bg-center bg-no-repeat opacity-[0.07] grayscale"
+            style={{ backgroundImage: `url(${logoWatermark.url})` }}
+          />
           <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl -z-10" />
           <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-primary/10 blur-3xl -z-10" />
+
 
           <div className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
