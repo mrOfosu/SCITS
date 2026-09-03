@@ -13,7 +13,15 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        display: ["Sora", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
       colors: {
+        brand: {
+          DEFAULT: "hsl(var(--brand))",
+          deep: "hsl(var(--brand-deep))",
+          teal: "hsl(var(--brand-teal))",
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
