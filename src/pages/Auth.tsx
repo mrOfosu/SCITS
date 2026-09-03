@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import logoWatermark from "@/assets/website_logo.png.asset.json";
+import scitsIcon from "@/assets/scits_icon.png.asset.json";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -160,18 +161,20 @@ export default function Auth() {
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-[58%] -z-10 w-[95%] max-w-[640px] -translate-x-1/2 -translate-y-1/2 aspect-[16/9] bg-contain bg-center bg-no-repeat opacity-[0.15] grayscale"
+            className="pointer-events-none absolute left-1/2 top-[58%] -z-10 w-[100%] max-w-[720px] -translate-x-1/2 -translate-y-1/2 aspect-[16/9] bg-contain bg-center bg-no-repeat opacity-[0.32] saturate-50 dark:opacity-[0.18] dark:grayscale"
             style={{ backgroundImage: `url(${logoWatermark.url})` }}
           />
           <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl -z-10" />
           <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-primary/10 blur-3xl -z-10" />
 
 
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="font-semibold text-lg">SCITS</span>
+          <div className="flex items-center gap-2.5">
+            <img
+              src={scitsIcon.url}
+              alt="SCITS logo"
+              className="h-11 w-11 rounded-xl shadow-sm"
+            />
+            <span className="font-semibold text-lg tracking-tight">SCITS</span>
           </div>
 
           <div className="py-10 space-y-6 lg:space-y-8">
