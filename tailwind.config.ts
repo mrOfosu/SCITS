@@ -108,13 +108,30 @@ export default {
             opacity: "1"
           }
         },
+        "spin-slow": {
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "pulse-soft": {
+          "0%, 100%": { opacity: "0.35" },
+          "50%": { opacity: "0.65" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.6s ease-out forwards",
         "slide-up": "slide-up 0.4s ease-out",
+        "spin-slow": "spin-slow 40s linear infinite",
+        "spin-slower": "spin-slow 75s linear infinite reverse",
+        float: "float 6s ease-in-out infinite",
+        "pulse-soft": "pulse-soft 8s ease-in-out infinite",
       },
+
     },
   },
   plugins: [require("tailwindcss-animate")],
