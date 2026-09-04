@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import logoWatermark from "@/assets/website_logo.png.asset.json";
@@ -23,6 +23,7 @@ import {
   Activity,
   Sparkles,
   ShieldCheck,
+  HelpCircle,
 } from "lucide-react";
 
 export default function Auth() {
@@ -162,20 +163,30 @@ export default function Auth() {
 
           {/* Animated ambient background — kept clear of the headline text */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute -right-40 top-[8%] h-[420px] w-[420px] animate-spin-slow rounded-full border border-dashed border-muted-foreground/20" />
-            <div className="absolute -right-24 top-[16%] h-[260px] w-[260px] animate-spin-slower rounded-full border border-muted-foreground/15" />
-            <div className="absolute -bottom-40 -left-32 h-[480px] w-[480px] animate-spin-slower rounded-full border border-dashed border-muted-foreground/10" />
-            <div className="absolute right-[8%] top-[6%] animate-float text-muted-foreground/25">
-              <FileText className="h-7 w-7" />
+            <div className="absolute -right-32 top-[4%] h-[300px] w-[300px] sm:h-[420px] sm:w-[420px] animate-spin-slow rounded-full border border-dashed border-brand/40">
+              <span className="absolute left-1/2 top-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/60" />
             </div>
-            <div className="absolute right-[18%] top-[22%] animate-float text-muted-foreground/25 [animation-delay:1.5s]">
-              <ShieldCheck className="h-8 w-8" />
+            <div className="absolute -right-20 top-[12%] h-[190px] w-[190px] sm:h-[260px] sm:w-[260px] animate-spin-slower rounded-full border border-brand-teal/40">
+              <span className="absolute left-0 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-teal/70" />
             </div>
-            <div className="absolute bottom-[8%] right-[12%] animate-float text-muted-foreground/20 [animation-delay:3s]">
-              <Activity className="h-6 w-6" />
+            <div className="absolute -bottom-40 -left-32 h-[380px] w-[380px] sm:h-[480px] sm:w-[480px] animate-spin-slower rounded-full border border-dashed border-brand/25" />
+            <div className="absolute right-[6%] top-[3%] animate-float text-brand/60">
+              <FileText className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
-            <div className="absolute -top-24 -left-24 h-72 w-72 animate-pulse-soft rounded-full bg-muted/40 blur-3xl" />
-            <div className="absolute bottom-0 right-0 h-72 w-72 animate-pulse-soft rounded-full bg-muted/40 blur-3xl [animation-delay:2s]" />
+            <div className="absolute right-[16%] top-[15%] animate-float text-brand-teal/60 [animation-delay:1.5s]">
+              <ShieldCheck className="h-7 w-7 sm:h-8 sm:w-8" />
+            </div>
+            <div className="absolute left-[4%] top-[6%] animate-float text-brand/45 [animation-delay:2.2s]">
+              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
+            </div>
+            <div className="absolute bottom-[6%] right-[8%] animate-float text-brand-teal/50 [animation-delay:3s]">
+              <Activity className="h-6 w-6 sm:h-7 sm:w-7" />
+            </div>
+            <div className="absolute bottom-[16%] left-[6%] animate-float text-brand/40 [animation-delay:4s]">
+              <GraduationCap className="h-6 w-6" />
+            </div>
+            <div className="absolute -top-24 -left-24 h-72 w-72 animate-pulse-soft rounded-full bg-brand/15 blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-72 w-72 animate-pulse-soft rounded-full bg-brand-teal/15 blur-3xl [animation-delay:2s]" />
           </div>
 
           <div
@@ -223,6 +234,8 @@ export default function Auth() {
           </div>
 
           <div className="hidden lg:flex gap-4 text-xs text-muted-foreground">
+            <Link to="/help" className="hover:text-foreground transition-colors">Help &amp; FAQ</Link>
+            <span>·</span>
             <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
             <span>·</span>
             <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
@@ -233,12 +246,17 @@ export default function Auth() {
         {/* Right: Auth form */}
         <div className="relative flex items-center justify-center p-4 sm:p-8 lg:p-12">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute -bottom-32 -right-32 h-[360px] w-[360px] animate-spin-slow rounded-full border border-dashed border-muted-foreground/20" />
-            <div className="absolute -bottom-16 -right-16 h-[220px] w-[220px] animate-spin-slower rounded-full border border-muted-foreground/15" />
-            <div className="absolute bottom-[12%] right-[10%] animate-float text-muted-foreground/25 [animation-delay:2s]">
+            <div className="absolute -bottom-28 -right-28 h-[280px] w-[280px] sm:h-[360px] sm:w-[360px] animate-spin-slow rounded-full border border-dashed border-brand/35">
+              <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/60" />
+            </div>
+            <div className="absolute -bottom-16 -right-16 h-[180px] w-[180px] sm:h-[220px] sm:w-[220px] animate-spin-slower rounded-full border border-brand-teal/35" />
+            <div className="absolute bottom-[10%] right-[8%] animate-float text-brand-teal/55 [animation-delay:2s]">
               <Sparkles className="h-6 w-6" />
             </div>
-            <div className="absolute -bottom-24 -right-24 h-64 w-64 animate-pulse-soft rounded-full bg-muted/40 blur-3xl" />
+            <div className="absolute top-[6%] left-[6%] animate-float text-brand/45 [animation-delay:1s]">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div className="absolute -bottom-24 -right-24 h-64 w-64 animate-pulse-soft rounded-full bg-brand/15 blur-3xl" />
           </div>
           <Card className="w-full max-w-md shadow-xl border-border/60 animate-scale-in backdrop-blur-sm">
             <CardHeader className="space-y-1">
@@ -363,6 +381,12 @@ export default function Auth() {
                   {isLogin ? "Don't have an account? " : "Already have an account? "}
                   <span className="text-primary font-medium">{isLogin ? "Sign up" : "Sign in"}</span>
                 </button>
+                <Link
+                  to="/help"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <HelpCircle className="h-3.5 w-3.5" /> Need help? Guides &amp; FAQ
+                </Link>
               </CardFooter>
             </form>
           </Card>
@@ -370,6 +394,8 @@ export default function Auth() {
 
         {/* Mobile footer */}
         <div className="lg:hidden flex justify-center gap-4 text-xs text-muted-foreground pb-6">
+          <Link to="/help" className="hover:text-foreground transition-colors">Help &amp; FAQ</Link>
+          <span>·</span>
           <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
           <span>·</span>
           <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
