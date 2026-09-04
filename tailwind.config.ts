@@ -120,6 +120,10 @@ export default {
           "0%, 100%": { opacity: "0.35" },
           "50%": { opacity: "0.65" },
         },
+        "scale-in": {
+          "0%": { transform: "scale(0.96)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
