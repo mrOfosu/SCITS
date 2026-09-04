@@ -160,22 +160,22 @@ export default function Auth() {
         <div className="relative flex flex-col justify-between p-8 lg:p-12 overflow-hidden">
           <div className="absolute inset-0 -z-10 bg-gradient-to-br from-primary/10 via-transparent to-primary/5" />
 
-          {/* Animated ambient background */}
+          {/* Animated ambient background — kept clear of the headline text */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 animate-spin-slow rounded-full border border-dashed border-brand/25" />
-            <div className="absolute left-1/2 top-1/2 h-[380px] w-[380px] -translate-x-1/2 -translate-y-1/2 animate-spin-slower rounded-full border border-brand-teal/25" />
-            <div className="absolute left-1/2 top-1/2 h-[720px] w-[720px] -translate-x-1/2 -translate-y-1/2 animate-spin-slower rounded-full border border-dashed border-brand/10" />
-            <div className="absolute left-[14%] top-[26%] animate-float text-brand/30">
+            <div className="absolute -right-40 top-[8%] h-[420px] w-[420px] animate-spin-slow rounded-full border border-dashed border-muted-foreground/20" />
+            <div className="absolute -right-24 top-[16%] h-[260px] w-[260px] animate-spin-slower rounded-full border border-muted-foreground/15" />
+            <div className="absolute -bottom-40 -left-32 h-[480px] w-[480px] animate-spin-slower rounded-full border border-dashed border-muted-foreground/10" />
+            <div className="absolute right-[8%] top-[6%] animate-float text-muted-foreground/25">
               <FileText className="h-7 w-7" />
             </div>
-            <div className="absolute right-[16%] top-[38%] animate-float text-brand-teal/30 [animation-delay:1.5s]">
+            <div className="absolute right-[18%] top-[22%] animate-float text-muted-foreground/25 [animation-delay:1.5s]">
               <ShieldCheck className="h-8 w-8" />
             </div>
-            <div className="absolute bottom-[22%] left-[26%] animate-float text-brand/25 [animation-delay:3s]">
+            <div className="absolute bottom-[8%] right-[12%] animate-float text-muted-foreground/20 [animation-delay:3s]">
               <Activity className="h-6 w-6" />
             </div>
-            <div className="absolute -top-24 -left-24 h-72 w-72 animate-pulse-soft rounded-full bg-brand/20 blur-3xl" />
-            <div className="absolute bottom-0 right-0 h-72 w-72 animate-pulse-soft rounded-full bg-brand-teal/20 blur-3xl [animation-delay:2s]" />
+            <div className="absolute -top-24 -left-24 h-72 w-72 animate-pulse-soft rounded-full bg-muted/40 blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-72 w-72 animate-pulse-soft rounded-full bg-muted/40 blur-3xl [animation-delay:2s]" />
           </div>
 
           <div
@@ -195,7 +195,7 @@ export default function Auth() {
 
           <div className="py-10 space-y-6 lg:space-y-8">
             <div className="space-y-3">
-              <h1 className="font-display text-3xl sm:text-4xl lg:text-[3.25rem] font-extrabold tracking-tight leading-[1.12] pb-1 bg-[image:var(--gradient-brand)] bg-clip-text text-transparent animate-fade-in">
+              <h1 className="font-display text-3xl sm:text-4xl lg:text-[3rem] font-extrabold tracking-tight leading-[1.25] py-1 text-foreground animate-fade-in">
                 Student Complaint &amp; Issue Tracking System
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-md animate-fade-in [animation-delay:120ms] opacity-0">
@@ -208,9 +208,9 @@ export default function Auth() {
                 <div
                   key={f.title}
                   style={{ animationDelay: `${200 + i * 90}ms` }}
-                  className="group flex items-start gap-3 rounded-xl border bg-card/60 backdrop-blur p-3 shadow-sm opacity-0 animate-fade-in transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-md"
+                  className="group flex items-start gap-3 rounded-xl border bg-card/60 backdrop-blur p-3 shadow-sm opacity-0 animate-fade-in transition-all duration-300 hover:-translate-y-1 hover:border-foreground/20 hover:shadow-md"
                 >
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand transition-transform duration-300 group-hover:scale-110">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted text-foreground transition-transform duration-300 group-hover:scale-110">
                     <f.icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
@@ -231,7 +231,15 @@ export default function Auth() {
 
 
         {/* Right: Auth form */}
-        <div className="flex items-center justify-center p-4 sm:p-8 lg:p-12">
+        <div className="relative flex items-center justify-center p-4 sm:p-8 lg:p-12">
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+            <div className="absolute -bottom-32 -right-32 h-[360px] w-[360px] animate-spin-slow rounded-full border border-dashed border-muted-foreground/20" />
+            <div className="absolute -bottom-16 -right-16 h-[220px] w-[220px] animate-spin-slower rounded-full border border-muted-foreground/15" />
+            <div className="absolute bottom-[12%] right-[10%] animate-float text-muted-foreground/25 [animation-delay:2s]">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div className="absolute -bottom-24 -right-24 h-64 w-64 animate-pulse-soft rounded-full bg-muted/40 blur-3xl" />
+          </div>
           <Card className="w-full max-w-md shadow-xl border-border/60 animate-scale-in backdrop-blur-sm">
             <CardHeader className="space-y-1">
               <CardTitle className="font-display text-2xl">{isLogin ? "Welcome back" : "Create your account"}</CardTitle>
