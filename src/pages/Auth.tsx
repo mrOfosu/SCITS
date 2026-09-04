@@ -195,7 +195,7 @@ export default function Auth() {
 
           <div className="py-10 space-y-6 lg:space-y-8">
             <div className="space-y-3">
-              <h1 className="font-display text-3xl sm:text-4xl lg:text-[3.25rem] font-extrabold tracking-tight leading-[1.08] bg-[image:var(--gradient-brand)] bg-clip-text text-transparent animate-fade-in">
+              <h1 className="font-display text-3xl sm:text-4xl lg:text-[3.25rem] font-extrabold tracking-tight leading-[1.12] pb-1 bg-[image:var(--gradient-brand)] bg-clip-text text-transparent animate-fade-in">
                 Student Complaint &amp; Issue Tracking System
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-md animate-fade-in [animation-delay:120ms] opacity-0">
