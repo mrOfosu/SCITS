@@ -243,12 +243,17 @@ export default function Auth() {
         {/* Right: Auth form */}
         <div className="relative flex items-center justify-center p-4 sm:p-8 lg:p-12">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute -bottom-32 -right-32 h-[360px] w-[360px] animate-spin-slow rounded-full border border-dashed border-muted-foreground/20" />
-            <div className="absolute -bottom-16 -right-16 h-[220px] w-[220px] animate-spin-slower rounded-full border border-muted-foreground/15" />
-            <div className="absolute bottom-[12%] right-[10%] animate-float text-muted-foreground/25 [animation-delay:2s]">
+            <div className="absolute -bottom-28 -right-28 h-[280px] w-[280px] sm:h-[360px] sm:w-[360px] animate-spin-slow rounded-full border border-dashed border-brand/35">
+              <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/60" />
+            </div>
+            <div className="absolute -bottom-16 -right-16 h-[180px] w-[180px] sm:h-[220px] sm:w-[220px] animate-spin-slower rounded-full border border-brand-teal/35" />
+            <div className="absolute bottom-[10%] right-[8%] animate-float text-brand-teal/55 [animation-delay:2s]">
               <Sparkles className="h-6 w-6" />
             </div>
-            <div className="absolute -bottom-24 -right-24 h-64 w-64 animate-pulse-soft rounded-full bg-muted/40 blur-3xl" />
+            <div className="absolute top-[6%] left-[6%] animate-float text-brand/45 [animation-delay:1s]">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div className="absolute -bottom-24 -right-24 h-64 w-64 animate-pulse-soft rounded-full bg-brand/15 blur-3xl" />
           </div>
           <Card className="w-full max-w-md shadow-xl border-border/60 animate-scale-in backdrop-blur-sm">
             <CardHeader className="space-y-1">
