@@ -232,9 +232,9 @@ export default function Auth() {
 
         {/* Right: Auth form */}
         <div className="flex items-center justify-center p-4 sm:p-8 lg:p-12">
-          <Card className="w-full max-w-md shadow-xl border-border/60">
+          <Card className="w-full max-w-md shadow-xl border-border/60 animate-scale-in backdrop-blur-sm">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl">{isLogin ? "Welcome back" : "Create your account"}</CardTitle>
+              <CardTitle className="font-display text-2xl">{isLogin ? "Welcome back" : "Create your account"}</CardTitle>
               <CardDescription>
                 {isLogin ? "Sign in to access your dashboard" : "Register as a new student to get started"}
               </CardDescription>
