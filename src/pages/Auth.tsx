@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import logoWatermark from "@/assets/website_logo.png.asset.json";
@@ -23,6 +23,7 @@ import {
   Activity,
   Sparkles,
   ShieldCheck,
+  HelpCircle,
 } from "lucide-react";
 
 export default function Auth() {
@@ -393,6 +394,8 @@ export default function Auth() {
 
         {/* Mobile footer */}
         <div className="lg:hidden flex justify-center gap-4 text-xs text-muted-foreground pb-6">
+          <Link to="/help" className="hover:text-foreground transition-colors">Help &amp; FAQ</Link>
+          <span>·</span>
           <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
           <span>·</span>
           <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
