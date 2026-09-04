@@ -380,6 +380,12 @@ export default function Auth() {
                   {isLogin ? "Don't have an account? " : "Already have an account? "}
                   <span className="text-primary font-medium">{isLogin ? "Sign up" : "Sign in"}</span>
                 </button>
+                <Link
+                  to="/help"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <HelpCircle className="h-3.5 w-3.5" /> Need help? Guides &amp; FAQ
+                </Link>
               </CardFooter>
             </form>
           </Card>
