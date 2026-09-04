@@ -134,6 +134,7 @@ export default {
         "spin-slower": "spin-slow 75s linear infinite reverse",
         float: "float 6s ease-in-out infinite",
         "pulse-soft": "pulse-soft 8s ease-in-out infinite",
+        "scale-in": "scale-in 0.35s ease-out",
       },
 
     },
