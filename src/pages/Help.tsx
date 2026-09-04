@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import scitsIcon from "@/assets/scits_logo_mark.png.asset.json";
 import {
   ArrowLeft,
   UserPlus,
@@ -119,14 +118,41 @@ const faqs = [
 
 export default function Help() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10">
-      <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:py-14">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-primary/10 relative overflow-hidden">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+        <div className="absolute -right-32 top-[4%] h-[300px] w-[300px] sm:h-[420px] sm:w-[420px] animate-spin-slow rounded-full border border-dashed border-brand/40">
+          <span className="absolute left-1/2 top-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/60" />
+        </div>
+        <div className="absolute -right-20 top-[12%] h-[190px] w-[190px] sm:h-[260px] sm:w-[260px] animate-spin-slower rounded-full border border-brand-teal/40">
+          <span className="absolute left-0 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-teal/70" />
+        </div>
+        <div className="absolute -bottom-40 -left-32 h-[380px] w-[380px] sm:h-[480px] sm:w-[480px] animate-spin-slower rounded-full border border-dashed border-brand/25" />
+        <div className="absolute right-[6%] top-[3%] animate-float text-brand/60">
+          <FileText className="h-6 w-6 sm:h-7 sm:w-7" />
+        </div>
+        <div className="absolute right-[16%] top-[15%] animate-float text-brand-teal/60 [animation-delay:1.5s]">
+          <ShieldCheck className="h-7 w-7 sm:h-8 sm:w-8" />
+        </div>
+        <div className="absolute left-[4%] top-[6%] animate-float text-brand/45 [animation-delay:2.2s]">
+          <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
+        </div>
+        <div className="absolute bottom-[6%] right-[8%] animate-float text-brand-teal/50 [animation-delay:3s]">
+          <Activity className="h-6 w-6 sm:h-7 sm:w-7" />
+        </div>
+        <div className="absolute bottom-[16%] left-[6%] animate-float text-brand/40 [animation-delay:4s]">
+          <LifeBuoy className="h-6 w-6" />
+        </div>
+        <div className="absolute -top-24 -left-24 h-72 w-72 animate-pulse-soft rounded-full bg-brand/15 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-72 w-72 animate-pulse-soft rounded-full bg-brand-teal/15 blur-3xl [animation-delay:2s]" />
+      </div>
+
+      <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:py-14 relative">
         <div className="flex items-center justify-between gap-4">
           <Link to="/auth" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4" /> Back to sign in
           </Link>
           <div className="flex items-center gap-2">
-            <img src={scitsIcon.url} alt="SCITS logo" className="h-9 w-9 object-contain" />
+            <img src="/scits_logo_mark.png" alt="SCITS logo" className="h-9 w-9 object-contain" />
             <span className="font-display font-semibold tracking-tight">SCITS</span>
           </div>
         </div>

@@ -1,10 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
-import logoWatermark from "@/assets/website_logo.png.asset.json";
-import scitsIcon from "@/assets/scits_logo_mark.png.asset.json";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,16 +50,16 @@ export default function Auth() {
 
   const handleGoogleSignIn = async () => {
     setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
     });
-    if (result.error) {
-      toast({ title: "Google sign-in failed", description: result.error.message, variant: "destructive" });
+    if (error) {
+      toast({ title: "Google sign-in failed", description: error.message, variant: "destructive" });
       setLoading(false);
-      return;
     }
-    if (result.redirected) return;
-    navigate("/");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -192,14 +188,14 @@ export default function Auth() {
           <div
             aria-hidden="true"
             className="pointer-events-none absolute left-1/2 top-[58%] -z-10 w-[100%] max-w-[720px] -translate-x-1/2 -translate-y-1/2 aspect-[16/9] bg-contain bg-center bg-no-repeat opacity-[0.32] saturate-50 dark:opacity-[0.18] dark:grayscale"
-            style={{ backgroundImage: `url(${logoWatermark.url})` }}
+            style={{ backgroundImage: `url(/scits_logo_mark.png)` }}
           />
 
           <div className="flex items-center gap-2.5 animate-fade-in">
             <img
-              src={scitsIcon.url}
+              src="/scits_logo_mark.png"
               alt="SCITS logo"
-              className="h-12 w-12 object-contain"
+              className="h-12 w-12 object-contain opacity-80"
             />
             <span className="font-display font-semibold text-lg tracking-tight">SCITS</span>
           </div>
