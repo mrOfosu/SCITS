@@ -233,6 +233,8 @@ export default function Auth() {
           </div>
 
           <div className="hidden lg:flex gap-4 text-xs text-muted-foreground">
+            <Link to="/help" className="hover:text-foreground transition-colors">Help &amp; FAQ</Link>
+            <span>·</span>
             <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
             <span>·</span>
             <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
