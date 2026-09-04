@@ -162,20 +162,30 @@ export default function Auth() {
 
           {/* Animated ambient background — kept clear of the headline text */}
           <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute -right-40 top-[8%] h-[420px] w-[420px] animate-spin-slow rounded-full border border-dashed border-muted-foreground/20" />
-            <div className="absolute -right-24 top-[16%] h-[260px] w-[260px] animate-spin-slower rounded-full border border-muted-foreground/15" />
-            <div className="absolute -bottom-40 -left-32 h-[480px] w-[480px] animate-spin-slower rounded-full border border-dashed border-muted-foreground/10" />
-            <div className="absolute right-[8%] top-[6%] animate-float text-muted-foreground/25">
-              <FileText className="h-7 w-7" />
+            <div className="absolute -right-32 top-[4%] h-[300px] w-[300px] sm:h-[420px] sm:w-[420px] animate-spin-slow rounded-full border border-dashed border-brand/40">
+              <span className="absolute left-1/2 top-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand/60" />
             </div>
-            <div className="absolute right-[18%] top-[22%] animate-float text-muted-foreground/25 [animation-delay:1.5s]">
-              <ShieldCheck className="h-8 w-8" />
+            <div className="absolute -right-20 top-[12%] h-[190px] w-[190px] sm:h-[260px] sm:w-[260px] animate-spin-slower rounded-full border border-brand-teal/40">
+              <span className="absolute left-0 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-teal/70" />
             </div>
-            <div className="absolute bottom-[8%] right-[12%] animate-float text-muted-foreground/20 [animation-delay:3s]">
-              <Activity className="h-6 w-6" />
+            <div className="absolute -bottom-40 -left-32 h-[380px] w-[380px] sm:h-[480px] sm:w-[480px] animate-spin-slower rounded-full border border-dashed border-brand/25" />
+            <div className="absolute right-[6%] top-[3%] animate-float text-brand/60">
+              <FileText className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
-            <div className="absolute -top-24 -left-24 h-72 w-72 animate-pulse-soft rounded-full bg-muted/40 blur-3xl" />
-            <div className="absolute bottom-0 right-0 h-72 w-72 animate-pulse-soft rounded-full bg-muted/40 blur-3xl [animation-delay:2s]" />
+            <div className="absolute right-[16%] top-[15%] animate-float text-brand-teal/60 [animation-delay:1.5s]">
+              <ShieldCheck className="h-7 w-7 sm:h-8 sm:w-8" />
+            </div>
+            <div className="absolute left-[4%] top-[6%] animate-float text-brand/45 [animation-delay:2.2s]">
+              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6" />
+            </div>
+            <div className="absolute bottom-[6%] right-[8%] animate-float text-brand-teal/50 [animation-delay:3s]">
+              <Activity className="h-6 w-6 sm:h-7 sm:w-7" />
+            </div>
+            <div className="absolute bottom-[16%] left-[6%] animate-float text-brand/40 [animation-delay:4s]">
+              <GraduationCap className="h-6 w-6" />
+            </div>
+            <div className="absolute -top-24 -left-24 h-72 w-72 animate-pulse-soft rounded-full bg-brand/15 blur-3xl" />
+            <div className="absolute bottom-0 right-0 h-72 w-72 animate-pulse-soft rounded-full bg-brand-teal/15 blur-3xl [animation-delay:2s]" />
           </div>
 
           <div
