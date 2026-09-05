@@ -169,11 +169,9 @@ export default function UserManagementSection() {
     }
     setDeleting(true);
     try {
-      // Remove all access artifacts. Auth row remains but user has no profile/role/access.
-      await supabase.from("notifications").delete().eq("user_id", deleteTarget.id);
-      await supabase.from("department_staff").delete().eq("user_id", deleteTarget.id);
-      await supabase.from("user_roles").delete().eq("user_id", deleteTarget.id);
-      const { error } = await supabase.from("profiles").delete().eq("id", deleteTarget.id);
+      const { error } = await supabase.functions.invoke("delete-user", {
+        body: { user_id: deleteTarget.id },
+      });
       if (error) throw error;
       toast({ title: "User removed", description: `${deleteTarget.display_name} has been removed.` });
       setDeleteTarget(null);
