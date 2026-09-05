@@ -109,9 +109,9 @@ serve(async (req) => {
       );
     }
 
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-    if (!OPENAI_API_KEY) {
-      throw new Error("OPENAI_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not configured");
     }
 
     // Build context messages
@@ -140,44 +140,74 @@ serve(async (req) => {
     }
 
     contextMessages.push(...messages.slice(-20));
+    const systemInstruction = contextMessages.find((message) => message.role === "system");
+    const contents = contextMessages
+      .filter((message) => message !== systemInstruction)
+      .map((message) => ({
+        role: message.role === "assistant" ? "model" : "user",
+        parts: [{ text: message.content }],
+      }));
 
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${encodeURIComponent(GEMINI_API_KEY)}`,
+      {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: contextMessages,
-        stream: true,
+        systemInstruction: systemInstruction ? { parts: [{ text: systemInstruction.content }] } : undefined,
+        contents,
+        generationConfig: { temperature: 0.7, maxOutputTokens: 700 },
       }),
-    });
+      },
+    );
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "I'm receiving too many requests right now. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI service credits have been exhausted. Please contact your administrator." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
       const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
+      console.error("Gemini error:", response.status, errorText);
       return new Response(
         JSON.stringify({ error: "Sorry, I'm having trouble connecting right now. Please try again." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        let buffer = "";
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            let lineBreak: number;
+            while ((lineBreak = buffer.indexOf("\n")) !== -1) {
+              const line = buffer.slice(0, lineBreak).trim();
+              buffer = buffer.slice(lineBreak + 1);
+              if (!line.startsWith("data:")) continue;
+              try {
+                const chunk = JSON.parse(line.slice(5).trim());
+                const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`));
+                }
+              } catch {
+                // Ignore incomplete or non-content Gemini events.
+              }
+            }
+          }
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        } catch (error) {
+          controller.error(error);
+        }
+      },
     });
+
+    return new Response(stream, { headers: { ...corsHeaders, "Content-Type": "text/event-stream" } });
   } catch (e) {
     console.error("student-chat error:", e);
     return new Response(

@@ -38,35 +38,31 @@ serve(async (req) => {
       });
     }
 
-    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
-    if (!OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
-    const aiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+    const aiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`,
+      {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `You are an AI assistant that generates concise summaries of student complaints for school administrators. Generate a structured summary with:
+        systemInstruction: { parts: [{ text: `You are an AI assistant that generates concise summaries of student complaints for school administrators. Generate a structured summary with:
 - **Category**: The complaint category
 - **Severity**: Low, Medium, or High based on the content
 - **Key Issue**: A one-sentence summary of the core problem
 - **Recommended Action**: A brief suggestion for the admin
 
-Keep it under 4 lines. Be factual and neutral.`,
-          },
-          {
-            role: "user",
-            content: `Summarize this complaint:\n\nSubject: ${complaint.subject}\nCategory: ${complaint.category}\nSub-category: ${complaint.sub_category || "N/A"}\nPriority: ${complaint.priority}\n\nDescription:\n${complaint.description}`,
-          },
-        ],
+Keep it under 4 lines. Be factual and neutral.` }] },
+        contents: [{
+          role: "user",
+          parts: [{ text: `Summarize this complaint:\n\nSubject: ${complaint.subject}\nCategory: ${complaint.category}\nSub-category: ${complaint.sub_category || "N/A"}\nPriority: ${complaint.priority}\n\nDescription:\n${complaint.description}` }],
+        }],
       }),
-    });
+      },
+    );
 
     if (!aiResponse.ok) {
       const errText = await aiResponse.text();
@@ -78,7 +74,7 @@ Keep it under 4 lines. Be factual and neutral.`,
     }
 
     const aiData = await aiResponse.json();
-    const summary = aiData.choices?.[0]?.message?.content || "Summary unavailable.";
+    const summary = aiData.candidates?.[0]?.content?.parts?.[0]?.text || "Summary unavailable.";
 
     // Store summary in the complaints table
     const { error: updateErr } = await supabase
