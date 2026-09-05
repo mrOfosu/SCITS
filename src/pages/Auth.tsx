@@ -118,7 +118,7 @@ export default function Auth() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="student@university.edu"
+                    placeholder="youremail@gmail.com"
                     required
                     className="pl-10"
                   />
@@ -313,7 +313,7 @@ export default function Auth() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="student@university.edu"
+                      placeholder="youremail@gmail.com"
                       required
                       className="pl-10 h-11"
                     />
