@@ -71,6 +71,7 @@ const priorityConfig: Record<string, { label: string; variant: "default" | "seco
   low: { label: "Low", variant: "secondary" },
   medium: { label: "Medium", variant: "outline" },
   high: { label: "High", variant: "destructive" },
+  critical: { label: "Critical", variant: "destructive" },
 };
 
 const categoryLabels: Record<string, string> = {

@@ -28,6 +28,7 @@ const ASSIGNABLE_ROLES: { value: AppRole; label: string; needsDept?: boolean; ne
   { value: "department_admin", label: "Department Admin", needsDept: true, needsFaculty: true },
   { value: "hod", label: "Head of Department (HOD)", needsDept: true, needsFaculty: true },
   { value: "faculty_admin", label: "Faculty Admin", needsFaculty: true },
+  { value: "admin", label: "Administrator" },
   { value: "super_admin", label: "Super Admin" },
 ];
 

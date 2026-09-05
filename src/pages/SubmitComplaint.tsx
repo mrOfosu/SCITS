@@ -35,10 +35,14 @@ function nextAcademicYear() {
 
 // Map our new main category codes back to the legacy enum so the legacy column stays valid.
 const LEGACY_CATEGORY_MAP: Record<string, LegacyCategory> = {
-  ACADEMIC: "academic",
-  TECHNICAL: "infrastructure",
-  ADMIN: "administrative",
-  FACILITIES: "other",
+  academic: "academic",
+  technical: "infrastructure",
+  administrative: "administrative",
+  admin: "administrative",
+  facilities_welfare: "other",
+  facilities: "other",
+  infrastructure: "infrastructure",
+  other: "other",
 };
 
 export default function SubmitComplaint() {
@@ -51,6 +55,7 @@ export default function SubmitComplaint() {
   const [departmentId, setDepartmentId] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [typeId, setTypeId] = useState("");
+  const [priority, setPriority] = useState<"low" | "medium" | "high" | "critical">("medium");
   const [academicYear, setAcademicYear] = useState(currentAcademicYear());
   const [semester, setSemester] = useState("First Semester");
   const [subject, setSubject] = useState("");
@@ -76,6 +81,10 @@ export default function SubmitComplaint() {
     [types, categoryId]
   );
   const selectedType = useMemo(() => types.find((t) => t.id === typeId), [types, typeId]);
+
+  useEffect(() => {
+    if (selectedType) setPriority(selectedType.default_priority);
+  }, [selectedType]);
 
   const descriptionError = description.length > 0 && description.length < 20;
 
@@ -130,7 +139,7 @@ export default function SubmitComplaint() {
       // Legacy fields for backwards compatibility
       category: LEGACY_CATEGORY_MAP[categoryCode] ?? "other",
       sub_category: selectedType?.name ?? null,
-      priority: selectedType?.default_priority ?? "medium",
+      priority,
       subject,
       description,
       attachment_url,
@@ -198,8 +207,8 @@ export default function SubmitComplaint() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Main Category *</Label>
-                  <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setTypeId(""); }}>
+                  <Label>Complaint Category *</Label>
+                  <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setTypeId(""); setPriority("medium"); }}>
                     <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                     <SelectContent>
                       {categories.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}
@@ -221,6 +230,24 @@ export default function SubmitComplaint() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Priority *</Label>
+                <Select value={priority} onValueChange={(v) => setPriority(v as typeof priority)} disabled={!typeId}>
+                  <SelectTrigger><SelectValue placeholder={typeId ? "Select priority" : "Select complaint type first"} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+                {selectedType && (
+                  <p className="text-xs text-muted-foreground">
+                    Default priority: <span className="capitalize font-medium">{selectedType.default_priority}</span>. You may override it.
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
