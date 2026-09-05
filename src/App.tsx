@@ -25,6 +25,7 @@ import Profile from "./pages/Profile";
 import Layout from "./components/Layout";
 import AdminLayout from "./components/admin/AdminLayout";
 import NotFound from "./pages/NotFound";
+import SiteMeta from "./components/SiteMeta";
 
 function OAuthCallback() {
   const { user, isAdmin, isLoading } = useAuth();
@@ -104,6 +105,7 @@ const App = () => {
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <SiteMeta />
           <AuthProvider>
             <AppPreferences>
               <Routes>
