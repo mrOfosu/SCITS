@@ -149,7 +149,7 @@ serve(async (req) => {
       }));
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${encodeURIComponent(GEMINI_API_KEY)}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=${encodeURIComponent(GEMINI_API_KEY)}`,
       {
       method: "POST",
       headers: {
@@ -166,8 +166,19 @@ serve(async (req) => {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Gemini error:", response.status, errorText);
+      let providerDetail = "unknown provider error";
+      try {
+        providerDetail = JSON.parse(errorText)?.error?.message || providerDetail;
+      } catch {
+        providerDetail = errorText.slice(0, 240) || providerDetail;
+      }
+      const providerMessage = response.status === 401 || response.status === 403
+        ? "Gemini rejected the API key. Check that the key belongs to the enabled Gemini API project."
+        : response.status === 429
+          ? "Gemini rate limit or quota reached. Check Google AI Studio billing and quotas."
+          : `Gemini request failed: ${providerDetail}`;
       return new Response(
-        JSON.stringify({ error: "Sorry, I'm having trouble connecting right now. Please try again." }),
+        JSON.stringify({ error: providerMessage }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
