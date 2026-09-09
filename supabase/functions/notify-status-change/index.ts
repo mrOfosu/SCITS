@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Complaints <onboarding@resend.dev>",
+        from: "Complaints <noreply@stucomp.online>",
         to: [profile.email],
         subject: `Status Update: ${complaint.reference_id || complaint.subject} — ${statusLabels[new_status] || new_status}`,
         html: `

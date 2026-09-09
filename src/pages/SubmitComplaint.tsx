@@ -156,6 +156,11 @@ export default function SubmitComplaint() {
     if (inserted?.id) {
       supabase.functions.invoke("generate-ai-summary", { body: { complaint_id: inserted.id } })
         .then(({ error: e }) => { if (e) console.error("AI summary failed:", e); });
+      supabase.functions.invoke("notify-new-complaint", { body: { complaint_id: inserted.id } })
+        .then(({ data, error: notifErr }) => {
+          if (notifErr) console.error("New complaint notification error:", notifErr);
+          else if (data && !data.success) console.error("New complaint notification failed:", data.error);
+        });
     }
     setLoading(false);
   };
