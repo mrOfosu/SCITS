@@ -9,14 +9,27 @@ export default function AdminReports() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from("complaints")
-      .select("*, profiles:user_id(display_name, full_name, student_id, department)")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setComplaints((data as unknown as ComplaintWithProfile[]) || []);
-        setLoading(false);
-      });
+    const load = () =>
+      supabase
+        .from("complaints")
+        .select("*, profiles:user_id(display_name, full_name, student_id, department)")
+        .order("created_at", { ascending: false })
+        .then(({ data }) => {
+          setComplaints((data as unknown as ComplaintWithProfile[]) || []);
+          setLoading(false);
+        });
+    load();
+
+    const channel = supabase
+      .channel("admin-reports-complaints")
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaints" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaint_escalations" }, () => load())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "complaint_responses" }, () => load())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   if (loading) {

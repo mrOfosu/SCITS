@@ -67,7 +67,8 @@ export default function AdminDashboard() {
     const channel = supabase
       .channel("admin-dashboard-complaints")
       .on("postgres_changes", { event: "*", schema: "public", table: "complaints" }, () => load())
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "complaint_escalations" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaint_escalations" }, () => load())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "complaint_responses" }, () => load())
       .subscribe();
 
     return () => {

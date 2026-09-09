@@ -50,6 +50,24 @@ export default function StudentDashboard() {
       setBookmarkedIds(new Set((bm || []).map((b) => b.complaint_id)));
       setLoading(false);
     });
+
+    const channel = supabase
+      .channel("student-dashboard-complaints")
+      .on("postgres_changes", { event: "*", schema: "public", table: "complaints", filter: `user_id=eq.${user.id}` }, () => {
+        supabase.from("complaints").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).then(({ data }) => {
+          setComplaints(data || []);
+        });
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "complaint_responses" }, () => {
+        supabase.from("complaints").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).then(({ data }) => {
+          setComplaints(data || []);
+        });
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const displayed = filter === "bookmarked" 

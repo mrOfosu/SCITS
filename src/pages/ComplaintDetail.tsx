@@ -284,8 +284,14 @@ export default function ComplaintDetail() {
       toast({ title: "Status updated", description: `Moved to ${statusConfig[nextStatus]?.label}` });
       supabase.functions.invoke("notify-status-change", {
         body: { complaint_id: id, old_status: oldStatus, new_status: nextStatus },
-      }).then(({ error: notifErr }) => {
-        if (notifErr) console.error("Notification failed:", notifErr);
+      }).then(({ data, error: notifErr }) => {
+        if (notifErr) {
+          console.error("Notification error:", notifErr);
+          toast({ title: "Notification error", description: notifErr.message, variant: "destructive" });
+        } else if (data && !data.success) {
+          console.error("Notification failed:", data.error);
+          toast({ title: "Notification failed", description: data.error || "Could not send email", variant: "destructive" });
+        }
       });
       fetchData();
     }
@@ -324,8 +330,14 @@ export default function ComplaintDetail() {
       if (isAdmin && inserted?.id) {
         supabase.functions.invoke("notify-complaint-response", {
           body: { complaint_id: id, response_id: inserted.id },
-        }).then(({ error: notifErr }) => {
-          if (notifErr) console.error("Notification failed:", notifErr);
+        }).then(({ data, error: notifErr }) => {
+          if (notifErr) {
+            console.error("Notification error:", notifErr);
+            toast({ title: "Notification error", description: notifErr.message, variant: "destructive" });
+          } else if (data && !data.success) {
+            console.error("Notification failed:", data.error);
+            toast({ title: "Notification failed", description: data.error || "Could not send email", variant: "destructive" });
+          }
         });
       }
       fetchData();
@@ -361,8 +373,14 @@ export default function ComplaintDetail() {
       setEscalationReason("");
       supabase.functions.invoke("notify-escalation", {
         body: { complaint_id: id, escalation_reason: escalationReason.trim() },
-      }).then(({ error: notifErr }) => {
-        if (notifErr) console.error("Notification failed:", notifErr);
+      }).then(({ data, error: notifErr }) => {
+        if (notifErr) {
+          console.error("Notification error:", notifErr);
+          toast({ title: "Notification error", description: notifErr.message, variant: "destructive" });
+        } else if (data && !data.success) {
+          console.error("Notification failed:", data.error);
+          toast({ title: "Notification failed", description: data.error || "Could not send email", variant: "destructive" });
+        }
       });
       fetchData();
     }
@@ -387,8 +405,14 @@ export default function ComplaintDetail() {
       setRejectionReason("");
       supabase.functions.invoke("notify-rejection", {
         body: { complaint_id: id, rejection_reason: rejectionReason.trim() },
-      }).then(({ error: notifErr }) => {
-        if (notifErr) console.error("Notification failed:", notifErr);
+      }).then(({ data, error: notifErr }) => {
+        if (notifErr) {
+          console.error("Notification error:", notifErr);
+          toast({ title: "Notification error", description: notifErr.message, variant: "destructive" });
+        } else if (data && !data.success) {
+          console.error("Notification failed:", data.error);
+          toast({ title: "Notification failed", description: data.error || "Could not send email", variant: "destructive" });
+        }
       });
       fetchData();
     }

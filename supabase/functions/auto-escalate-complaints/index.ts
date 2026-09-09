@@ -28,18 +28,37 @@ Deno.serve(async (req) => {
   const results: { id: string; ok: boolean; error?: string; hod_id?: string | null }[] = [];
 
   for (const c of candidates || []) {
-    // Find HOD for the department
-    const { data: hodRows } = await admin
+    if (!c.assigned_department_id) {
+      results.push({ id: c.id, ok: false, error: "missing assigned_department_id" });
+      continue;
+    }
+
+    const { data: hodRoles } = await admin
       .from("user_roles")
-      .select("user_id, profiles!inner(department_id), department_staff(department_id)")
+      .select("user_id")
       .eq("role", "hod");
 
-    const hodId =
-      (hodRows || []).find(
-        (r: any) =>
-          r.profiles?.department_id === c.assigned_department_id ||
-          (Array.isArray(r.department_staff) && r.department_staff.some((d: any) => d.department_id === c.assigned_department_id))
-      )?.user_id ?? null;
+    const hodUserIds = (hodRoles || []).map((r: any) => r.user_id);
+
+    let hodId: string | null = null;
+
+    if (hodUserIds.length > 0) {
+      const { data: hodProfiles } = await admin
+        .from("profiles")
+        .select("id")
+        .eq("department_id", c.assigned_department_id)
+        .in("id", hodUserIds);
+
+      const { data: hodStaff } = await admin
+        .from("department_staff")
+        .select("user_id")
+        .eq("department_id", c.assigned_department_id)
+        .in("user_id", hodUserIds);
+
+      const profileId = (hodProfiles || [])[0]?.id;
+      const staffId = (hodStaff || [])[0]?.user_id;
+      hodId = profileId || staffId || null;
+    }
 
     const prevRole = c.current_handler_role || "department_admin";
     const prevId = c.current_handler_id;
