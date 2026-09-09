@@ -339,6 +339,18 @@ export default function ComplaintDetail() {
             toast({ title: "Notification failed", description: data.error || "Could not send email", variant: "destructive" });
           }
         });
+      } else if (!isAdmin && inserted?.id) {
+        supabase.functions.invoke("notify-student-response", {
+          body: { complaint_id: id, response_id: inserted.id },
+        }).then(({ data, error: notifErr }) => {
+          if (notifErr) {
+            console.error("Notification error:", notifErr);
+            toast({ title: "Notification error", description: notifErr.message, variant: "destructive" });
+          } else if (data && !data.success) {
+            console.error("Notification failed:", data.error);
+            toast({ title: "Notification failed", description: data.error || "Could not send email", variant: "destructive" });
+          }
+        });
       }
       fetchData();
     }
