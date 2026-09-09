@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
-const SITE_URL = "https://scits-six.vercel.app";
+const SITE_URL = "https://stucomp.online";
 const DEFAULT_DESCRIPTION = "SCITS helps students submit, track, and resolve school complaints efficiently.";
 
 const routeMeta = [
