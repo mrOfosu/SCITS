@@ -3,7 +3,8 @@ import { GooeyToaster, goeyToast, type GooeyToastOptions, type GooeyToastType } 
 import "goey-toast/styles.css";
 
 const TOAST_LIMIT = 1;
-const TOAST_REMOVE_DELAY = 1000000;
+const DEFAULT_DURATION = 4500;
+const ERROR_DURATION = 6000;
 
 type ToasterToast = {
   id: string;
@@ -13,6 +14,7 @@ type ToasterToast = {
   variant?: "default" | "destructive";
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  duration?: number;
 };
 
 const actionTypes = {
@@ -55,7 +57,7 @@ interface State {
 
 const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
 
-const addToRemoveQueue = (toastId: string) => {
+const addToRemoveQueue = (toastId: string, duration: number = DEFAULT_DURATION) => {
   if (toastTimeouts.has(toastId)) {
     return;
   }
@@ -66,7 +68,7 @@ const addToRemoveQueue = (toastId: string) => {
       type: "REMOVE_TOAST",
       toastId: toastId,
     });
-  }, TOAST_REMOVE_DELAY);
+  }, duration);
 
   toastTimeouts.set(toastId, timeout);
 };
@@ -91,10 +93,11 @@ export const reducer = (state: State, action: Action): State => {
       const { toastId } = action;
 
       if (toastId) {
-        addToRemoveQueue(toastId);
+        const toast = state.toasts.find((t) => t.id === toastId);
+        addToRemoveQueue(toastId, toast?.duration ?? DEFAULT_DURATION);
       } else {
         state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id);
+          addToRemoveQueue(toast.id, toast.duration ?? DEFAULT_DURATION);
         });
       }
 
@@ -146,10 +149,11 @@ function toast({ ...props }: Toast) {
     const id = genId();
 
     const isError = props.variant === "destructive";
+    const duration = isError ? ERROR_DURATION : DEFAULT_DURATION;
 
     const goeyOptions: GooeyToastOptions = {
       description: props.description as string | undefined,
-      duration: isError ? 6000 : 4500,
+      duration,
       type: mapVariant(props.variant),
     };
 
@@ -167,6 +171,7 @@ function toast({ ...props }: Toast) {
     toast: {
       ...props,
       id,
+      duration,
       open: true,
       onOpenChange: (open) => {
         if (!open) dismiss();
