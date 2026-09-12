@@ -33,31 +33,33 @@ Deno.serve(async (req) => {
       continue;
     }
 
-    const { data: hodRoles } = await admin
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "hod");
-
-    const hodUserIds = (hodRoles || []).map((r: any) => r.user_id);
+    // HOD lookup matching manual escalate_complaint RPC:
+    // SELECT ur.user_id FROM user_roles ur
+    // LEFT JOIN department_staff ds ON ds.user_id = ur.user_id AND ds.department_id = c.assigned_department_id
+    // LEFT JOIN profiles p ON p.id = ur.user_id AND p.department_id = c.assigned_department_id
+    // WHERE ur.role = 'hod' AND (ds.id IS NOT NULL OR p.id IS NOT NULL) LIMIT 1
+    const { data: hodStaff } = await admin
+      .from("department_staff")
+      .select("user_id, user_roles!inner(role)")
+      .eq("department_id", c.assigned_department_id)
+      .eq("user_roles.role", "hod")
+      .limit(1);
 
     let hodId: string | null = null;
 
-    if (hodUserIds.length > 0) {
+    if (hodStaff && hodStaff.length > 0) {
+      hodId = hodStaff[0].user_id;
+    } else {
       const { data: hodProfiles } = await admin
         .from("profiles")
-        .select("id")
+        .select("id, user_roles!inner(role)")
         .eq("department_id", c.assigned_department_id)
-        .in("id", hodUserIds);
+        .eq("user_roles.role", "hod")
+        .limit(1);
 
-      const { data: hodStaff } = await admin
-        .from("department_staff")
-        .select("user_id")
-        .eq("department_id", c.assigned_department_id)
-        .in("user_id", hodUserIds);
-
-      const profileId = (hodProfiles || [])[0]?.id;
-      const staffId = (hodStaff || [])[0]?.user_id;
-      hodId = profileId || staffId || null;
+      if (hodProfiles && hodProfiles.length > 0) {
+        hodId = hodProfiles[0].id;
+      }
     }
 
     const prevRole = c.current_handler_role || "department_admin";
@@ -69,6 +71,7 @@ Deno.serve(async (req) => {
       .update({
         escalation_level: 1,
         escalated_at: new Date().toISOString(),
+        escalated_by: null,
         escalation_reason: reason,
         current_handler_id: hodId,
         current_handler_role: "hod",
@@ -93,7 +96,7 @@ Deno.serve(async (req) => {
 
     await admin.from("complaint_activity").insert({
       complaint_id: c.id,
-      performed_by: c.user_id, // placeholder since system
+      performed_by: c.user_id,
       action_type: "escalated",
       performed_role: "system",
       old_status: c.status,
@@ -114,7 +117,7 @@ Deno.serve(async (req) => {
         user_id: hodId,
         complaint_id: c.id,
         title: `Complaint Escalated to You: ${c.reference_id || c.subject}`,
-        message: "An overdue complaint has been escalated to you as HOD.",
+        message: "An overdue complaint has been escalated to you as HOD. Reason: " + reason,
       });
     }
     await admin.from("notifications").insert(notifications);
