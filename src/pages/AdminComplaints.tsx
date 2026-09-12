@@ -5,10 +5,12 @@ import AdminFilters, { type Filters, defaultFilters } from "@/components/admin/A
 import ComplaintsTable from "@/components/admin/ComplaintsTable";
 import ExportButtons from "@/components/admin/ExportButtons";
 import type { ComplaintWithProfile } from "@/pages/AdminDashboard";
+import { useAuth } from "@/hooks/useAuth";
 
 const KNOWN_STATUSES = ["all", "pending", "in_review", "resolved", "closed", "rejected", "overdue"];
 
 export default function AdminComplaints() {
+  const { user, role } = useAuth();
   const [searchParams] = useSearchParams();
   const initialStatus = searchParams.get("status") || "all";
   const [complaints, setComplaints] = useState<ComplaintWithProfile[]>([]);
@@ -29,15 +31,21 @@ export default function AdminComplaints() {
   }, [searchParams]);
 
   useEffect(() => {
-    supabase
+    let query = supabase
       .from("complaints")
       .select("*, profiles:user_id(display_name, full_name, student_id, department)")
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setComplaints((data as unknown as ComplaintWithProfile[]) || []);
-        setLoading(false);
-      });
-  }, []);
+      .order("created_at", { ascending: false });
+
+    // Keep the HOD workspace focused on complaints actually escalated to them.
+    if (role === "hod" && user) {
+      query = query.eq("escalation_level", 1).eq("current_handler_id", user.id);
+    }
+
+    query.then(({ data }) => {
+      setComplaints((data as unknown as ComplaintWithProfile[]) || []);
+      setLoading(false);
+    });
+  }, [role, user]);
 
   const departments = useMemo(() => {
     const set = new Set<string>();

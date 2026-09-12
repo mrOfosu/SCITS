@@ -286,11 +286,11 @@ export default function ComplaintDetail() {
         body: { complaint_id: id, old_status: oldStatus, new_status: nextStatus },
       }).then(({ data, error: notifErr }) => {
         if (notifErr) {
-          console.error("Notification error:", notifErr);
-          toast({ title: "Notification error", description: notifErr.message, variant: "destructive" });
+          // The status update has already succeeded. Email delivery must not
+          // make an HOD's completed update look like it failed.
+          console.warn("Status notification could not be sent:", notifErr);
         } else if (data && !data.success) {
-          console.error("Notification failed:", data.error);
-          toast({ title: "Notification failed", description: data.error || "Could not send email", variant: "destructive" });
+          console.warn("Status notification could not be sent:", data.error);
         }
       });
       fetchData();
@@ -836,4 +836,3 @@ export default function ComplaintDetail() {
     </div>
   );
 }
-

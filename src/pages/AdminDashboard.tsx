@@ -48,19 +48,37 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const load = () =>
-      supabase
+      {
+        let query = supabase
         .from("complaints")
         .select("*, profiles:user_id(display_name, full_name, student_id, department)")
-        .order("created_at", { ascending: false })
-        .then(({ data }) => {
+        .order("created_at", { ascending: false });
+
+        // An HOD should only see the escalated complaints assigned to them.
+        if (role === "hod" && user) {
+          query = query.eq("escalation_level", 1).eq("current_handler_id", user.id);
+        }
+
+        return query.then(({ data }) => {
           setComplaints((data as unknown as ComplaintWithProfile[]) || []);
           setLoading(false);
         });
+      };
     load();
 
     // Fire-and-forget: check for overdue complaints and send admin notifications
     supabase.functions.invoke("check-overdue-complaints").then(({ error }) => {
       if (error) console.error("Overdue check failed:", error);
+    });
+
+    // Evaluate the three-day escalation rule in the background. The function
+    // assigns only the matching department HOD, then reloads this HOD's queue.
+    supabase.functions.invoke("auto-escalate-complaints").then(({ error }) => {
+      if (error) {
+        console.error("Automatic escalation check failed:", error);
+      } else {
+        load();
+      }
     });
 
     // Realtime: refresh on any complaint change (insert/update/delete)
@@ -74,7 +92,7 @@ export default function AdminDashboard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [role, user]);
 
   const counts = useMemo(() => {
     const now = new Date();

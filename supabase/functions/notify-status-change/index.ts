@@ -171,9 +171,12 @@ Deno.serve(async (req) => {
   } catch (error: unknown) {
     console.error("Status notification error:", error);
     const msg = error instanceof Error ? error.message : "Unknown error";
+    // A notification failure is non-critical: the complaint status was
+    // already saved before this function was called. Returning 200 prevents
+    // the client from reporting a failed HOD update as an Edge Function error.
     return new Response(
       JSON.stringify({ success: false, error: msg }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
