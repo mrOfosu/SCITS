@@ -145,14 +145,12 @@ function mapVariant(variant?: "default" | "destructive"): GooeyToastType {
 function toast({ ...props }: Toast) {
     const id = genId();
 
+    const isError = props.variant === "destructive";
+
     const goeyOptions: GooeyToastOptions = {
       description: props.description as string | undefined,
-      duration: 5000,
+      duration: isError ? 6000 : 4500,
       type: mapVariant(props.variant),
-      classNames: {
-        title: "text-base font-semibold", // ~30% larger than default text-sm
-        description: "text-base opacity-90", // ~30% larger than default text-sm
-      },
     };
 
   const update = (props: ToasterToast) =>

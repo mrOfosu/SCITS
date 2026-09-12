@@ -4,9 +4,9 @@ import "goey-toast/styles.css";
 export function Toaster() {
   return (
     <GooeyToaster
-      position="top-left"
+      position="top-right"
       gap={12}
-      offset={80}
+      offset={20}
       expand={true}
       closeButton="top-right"
       richColors={true}
