@@ -16,6 +16,7 @@ export function Toaster() {
       closeOnEscape={true}
       maxQueue={3}
       showProgress={false}
+      duration={4500}
     />
   );
 }
