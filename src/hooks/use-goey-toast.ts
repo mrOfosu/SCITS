@@ -4,7 +4,6 @@ import "goey-toast/styles.css";
 
 const TOAST_LIMIT = 1;
 const DEFAULT_DURATION = 4500;
-const ERROR_DURATION = 6000;
 
 type ToasterToast = {
   id: string;
@@ -148,12 +147,12 @@ function mapVariant(variant?: "default" | "destructive"): GooeyToastType {
 function toast({ ...props }: Toast) {
     const id = genId();
 
-    const isError = props.variant === "destructive";
-    const duration = isError ? ERROR_DURATION : DEFAULT_DURATION;
+    const duration = props.duration ?? DEFAULT_DURATION;
 
     const goeyOptions: GooeyToastOptions = {
       description: props.description as string | undefined,
       duration,
+      timing: { displayDuration: duration },
       type: mapVariant(props.variant),
     };
 
@@ -165,6 +164,13 @@ function toast({ ...props }: Toast) {
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id });
 
   const toastId = goeyToast(props.title as string, goeyOptions);
+
+  // Gooey Toast pauses its expanded-toast timer while the toast is open.
+  // Dismiss independently so description and error toasts always close.
+  setTimeout(() => {
+    goeyToast.dismiss(toastId);
+    dismiss();
+  }, duration);
 
   dispatch({
     type: "ADD_TOAST",
