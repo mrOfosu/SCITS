@@ -33,32 +33,40 @@ Deno.serve(async (req) => {
       continue;
     }
 
-    // HOD lookup matching manual escalate_complaint RPC:
-    // SELECT ur.user_id FROM user_roles ur
-    // LEFT JOIN department_staff ds ON ds.user_id = ur.user_id AND ds.department_id = c.assigned_department_id
-    // LEFT JOIN profiles p ON p.id = ur.user_id AND p.department_id = c.assigned_department_id
-    // WHERE ur.role = 'hod' AND (ds.id IS NOT NULL OR p.id IS NOT NULL) LIMIT 1
-    const { data: hodStaff } = await admin
-      .from("department_staff")
-      .select("user_id, user_roles!inner(role)")
-      .eq("department_id", c.assigned_department_id)
-      .eq("user_roles.role", "hod")
-      .limit(1);
+    // HOD lookup matching manual escalate_complaint RPC logic:
+    // Find users with 'hod' role who are in department_staff or profiles for this department
+    const { data: hodRoles } = await admin
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "hod");
+
+    const hodUserIds = (hodRoles || []).map((r: any) => r.user_id);
 
     let hodId: string | null = null;
 
-    if (hodStaff && hodStaff.length > 0) {
-      hodId = hodStaff[0].user_id;
-    } else {
-      const { data: hodProfiles } = await admin
-        .from("profiles")
-        .select("id, user_roles!inner(role)")
+    if (hodUserIds.length > 0) {
+      // Check department_staff first
+      const { data: hodStaff } = await admin
+        .from("department_staff")
+        .select("user_id")
         .eq("department_id", c.assigned_department_id)
-        .eq("user_roles.role", "hod")
+        .in("user_id", hodUserIds)
         .limit(1);
 
-      if (hodProfiles && hodProfiles.length > 0) {
-        hodId = hodProfiles[0].id;
+      if (hodStaff && hodStaff.length > 0) {
+        hodId = hodStaff[0].user_id;
+      } else {
+        // Fallback to profiles
+        const { data: hodProfiles } = await admin
+          .from("profiles")
+          .select("id")
+          .eq("department_id", c.assigned_department_id)
+          .in("id", hodUserIds)
+          .limit(1);
+
+        if (hodProfiles && hodProfiles.length > 0) {
+          hodId = hodProfiles[0].id;
+        }
       }
     }
 
