@@ -56,7 +56,7 @@ export default function AdminDashboard() {
 
         // An HOD should only see the escalated complaints assigned to them.
         if (role === "hod" && user) {
-          query = query.eq("escalation_level", 1).eq("current_handler_id", user.id);
+          query = query.gte("escalation_level", 1).eq("current_handler_id", user.id);
         }
 
         return query.then(({ data }) => {

@@ -44,35 +44,37 @@ Deno.serve(async (req) => {
 
       let hodId: string | null = null;
 
-      // Only the HOD assigned to the complaint's department can receive it.
-      // Do not fall back to an arbitrary HOD; that produces an inaccurate HOD queue.
+      // The HOD's primary profile department is authoritative. A staff link is
+      // only a legacy fallback when the HOD profile has no department set.
+      // Never use a faculty-wide or arbitrary-HOD fallback.
       if (hodUserIds.length > 0) {
-        const { data: hodStaff, error: hodStaffError } = await admin
-          .from("department_staff")
-          .select("user_id")
+        const { data: hodProfiles, error: hodProfilesError } = await admin
+          .from("profiles")
+          .select("id")
           .eq("department_id", c.assigned_department_id)
-          .in("user_id", hodUserIds)
+          .in("id", hodUserIds)
           .limit(1);
 
-        if (hodStaffError) {
-          results.push({ id: c.id, ok: false, error: hodStaffError.message });
+        if (hodProfilesError) {
+          results.push({ id: c.id, ok: false, error: hodProfilesError.message });
           continue;
         }
 
-        hodId = hodStaff?.[0]?.user_id ?? null;
+        hodId = hodProfiles?.[0]?.id ?? null;
         if (!hodId) {
-          const { data: hodProfiles, error: hodProfilesError } = await admin
-            .from("profiles")
-            .select("id")
+          const { data: hodStaff, error: hodStaffError } = await admin
+            .from("department_staff")
+            .select("user_id, profiles!inner(department_id)")
             .eq("department_id", c.assigned_department_id)
-            .in("id", hodUserIds)
+            .in("user_id", hodUserIds)
+            .is("profiles.department_id", null)
             .limit(1);
 
-          if (hodProfilesError) {
-            results.push({ id: c.id, ok: false, error: hodProfilesError.message });
+          if (hodStaffError) {
+            results.push({ id: c.id, ok: false, error: hodStaffError.message });
             continue;
           }
-          hodId = hodProfiles?.[0]?.id ?? null;
+          hodId = hodStaff?.[0]?.user_id ?? null;
         }
       }
 
