@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { LayoutDashboard, FileText, Bell, BarChart3, Settings, LogOut, GraduationCap, Shield } from "lucide-react";
+import { LayoutDashboard, FileText, Bell, BarChart3, Settings, LogOut, GraduationCap, Shield, Star } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -30,7 +30,7 @@ const navItems = [
 export default function AdminSidebar() {
   const { state, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
-  const { signOut } = useAuth();
+  const { signOut, role } = useAuth();
   const isMobile = useIsMobile();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
@@ -58,7 +58,7 @@ export default function AdminSidebar() {
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {[...navItems, ...(role === "super_admin" ? [{ title: "Reviews & Performance", url: "/admin/reviews", icon: Star }] : [])].map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink

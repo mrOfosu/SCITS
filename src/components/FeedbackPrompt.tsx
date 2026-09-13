@@ -47,18 +47,25 @@ export default function FeedbackPrompt({ complaintId, existingFeedback, existing
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("complaint_feedback").insert({
+    const { data: savedFeedback, error } = await supabase.from("complaint_feedback").insert({
       complaint_id: complaintId,
       user_id: user.id,
       satisfied,
       rating,
       comment: comment.trim() || null,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } as any);
+    } as any).select("id").single();
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: satisfied ? "Glad it's resolved!" : "Feedback recorded" });
+      if (savedFeedback?.id) {
+        supabase.functions.invoke("notify-complaint-feedback", {
+          body: { complaint_id: complaintId, feedback_id: savedFeedback.id },
+        }).then(({ error: notificationError }) => {
+          if (notificationError) console.error("Feedback notification failed:", notificationError);
+        });
+      }
       onFeedbackSubmitted?.();
     }
     setSubmitting(false);

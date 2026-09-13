@@ -113,6 +113,7 @@ export default function ComplaintDetail() {
   const [deleting, setDeleting] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [feedback, setFeedback] = useState<boolean | null | undefined>(undefined);
+  const [feedbackRating, setFeedbackRating] = useState<number | null>(null);
   const [assignedAdmin, setAssignedAdmin] = useState<string | null>(null);
   const [currentHandler, setCurrentHandler] = useState<string | null>(null);
   const [showEscalateDialog, setShowEscalateDialog] = useState(false);
@@ -219,11 +220,12 @@ export default function ComplaintDetail() {
     // Fetch feedback
     const { data: fb } = await supabase
       .from("complaint_feedback")
-      .select("satisfied")
+      .select("satisfied, rating")
       .eq("complaint_id", id)
       .eq("user_id", user.id)
       .maybeSingle();
     setFeedback(fb ? fb.satisfied : null);
+    setFeedbackRating(fb?.rating ?? null);
 
     setLoading(false);
   }, [id, user, isAdmin]);
@@ -664,6 +666,7 @@ export default function ComplaintDetail() {
             <FeedbackPrompt
               complaintId={complaint.id}
               existingFeedback={feedback}
+              existingRating={feedbackRating}
               onFeedbackSubmitted={fetchData}
             />
           )}

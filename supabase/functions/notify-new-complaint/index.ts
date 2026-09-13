@@ -12,7 +12,12 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    const rawResendApiKey = Deno.env.get("RESEND_API_KEY") ?? "";
+    const RESEND_API_KEY = rawResendApiKey
+      .trim()
+      .replace(/^['"]|['"]$/g, "")
+      .replace(/^RESEND_API_KEY\s*=\s*/i, "")
+      .replace(/^Bearer\s+/i, "");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -25,15 +30,16 @@ Deno.serve(async (req) => {
     const { complaint_id } = await req.json();
     if (!complaint_id) throw new Error("complaint_id is required");
 
-    // Dedupe check
+    // Dedupe check. Failed sends remain retryable instead of permanently
+    // suppressing an email after a transient Resend/configuration failure.
     const dedupeKey = `new_complaint_${complaint_id}`;
     const { data: existing } = await supabase
       .from("notification_log")
-      .select("id")
+      .select("id, status")
       .eq("dedupe_key", dedupeKey)
       .maybeSingle();
 
-    if (existing) {
+    if (existing?.status === "sent" || existing?.status === "sending") {
       return new Response(
         JSON.stringify({ success: true, message: "Already notified" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -43,7 +49,7 @@ Deno.serve(async (req) => {
     // Fetch complaint
     const { data: complaint, error: compErr } = await supabase
       .from("complaints")
-      .select("user_id, reference_id, subject, category, priority, description")
+      .select("user_id, reference_id, subject, category, priority, description, current_handler_id, assigned_admin_id")
       .eq("id", complaint_id)
       .single();
 
@@ -56,36 +62,17 @@ Deno.serve(async (req) => {
       .eq("id", complaint.user_id)
       .single();
 
-    // Fetch all admin user IDs
-    const { data: adminRoles } = await supabase
-      .from("user_roles")
-      .select("user_id")
-      .in("role", ["admin", "super_admin", "faculty_admin", "department_admin", "hod"]);
-
-    if (!adminRoles || adminRoles.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, message: "No admins found" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Fetch admin emails
-    const adminIds = adminRoles.map((r) => r.user_id);
-    const { data: adminProfiles } = await supabase
+    // The complaint was assigned by the insert trigger. Send to that one
+    // handler—not a batch of unrelated admins whose addresses can make the
+    // Resend request fail.
+    const handlerId = complaint.current_handler_id ?? complaint.assigned_admin_id;
+    if (!handlerId) throw new Error("No handler assigned to this complaint");
+    const { data: handlerProfile } = await supabase
       .from("profiles")
-      .select("email")
-      .in("id", adminIds);
-
-    const adminEmails = (adminProfiles || [])
-      .map((p) => p.email)
-      .filter((e): e is string => !!e);
-
-    if (adminEmails.length === 0) {
-      return new Response(
-        JSON.stringify({ success: true, message: "No admin emails found" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+      .select("email, display_name")
+      .eq("id", handlerId)
+      .single();
+    if (!handlerProfile?.email) throw new Error("Assigned handler email not found");
 
     const categoryLabels: Record<string, string> = {
       academic: "Academic",
@@ -106,26 +93,20 @@ Deno.serve(async (req) => {
       high: "#dc2626",
     };
 
-    // Insert notification log for dedup
-    const { error: logErr } = await supabase.from("notification_log").insert({
+    const logPayload = {
       complaint_id,
-      recipient_email: adminEmails.join(", "),
+      recipient_email: handlerProfile.email,
       notification_type: "new_complaint",
       dedupe_key: dedupeKey,
       status: "sending",
-    });
+      error_message: null,
+    };
+    const { error: logErr } = existing
+      ? await supabase.from("notification_log").update(logPayload).eq("id", existing.id)
+      : await supabase.from("notification_log").insert(logPayload);
+    if (logErr) throw logErr;
 
-    if (logErr) {
-      if (logErr.code === "23505") {
-        return new Response(
-          JSON.stringify({ success: true, message: "Already notified" }),
-          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      throw logErr;
-    }
-
-    // Send email to all admins
+    // Send email to the complaint's actual assigned handler.
     const emailRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
@@ -134,12 +115,13 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: "Complaints <noreply@stucomp.online>",
-        to: adminEmails,
+        to: [handlerProfile.email],
         subject: `New Complaint: ${complaint.reference_id || complaint.subject} [${priorityLabels[complaint.priority] || complaint.priority}]`,
         html: `
           <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <h2 style="color: #1a1a1a;">New Complaint Submitted</h2>
-            <p>A student has submitted a new complaint that requires your attention.</p>
+            <p>Hi ${handlerProfile.display_name || "there"},</p>
+            <p>A student has submitted a complaint assigned to you.</p>
             <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
               <tr><td style="padding: 8px; font-weight: bold; color: #666;">Reference</td><td style="padding: 8px;">${complaint.reference_id || "N/A"}</td></tr>
               <tr><td style="padding: 8px; font-weight: bold; color: #666;">Submitted by</td><td style="padding: 8px;">${submitter?.display_name || "Unknown"}${submitter?.student_id ? ` (${submitter.student_id})` : ""}</td></tr>

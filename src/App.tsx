@@ -20,6 +20,7 @@ import AdminComplaints from "./pages/AdminComplaints";
 import AdminNotifications from "./pages/AdminNotifications";
 import AdminReports from "./pages/AdminReports";
 import AdminSettings from "./pages/AdminSettings";
+import SuperAdminReviews from "./pages/SuperAdminReviews";
 import CompleteProfile from "./pages/CompleteProfile";
 import Profile from "./pages/Profile";
 import Layout from "./components/Layout";
@@ -70,6 +71,14 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
       <PageTransition>{children}</PageTransition>
     </AdminLayout>
   );
+}
+
+function SuperAdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, role, isLoading } = useAuth();
+  if (isLoading) return <RouteLoader />;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (role !== "super_admin") return <Navigate to="/admin" replace />;
+  return <AdminLayout><PageTransition>{children}</PageTransition></AdminLayout>;
 }
 
 function AuthRoute() {
@@ -123,6 +132,7 @@ const App = () => {
                 <Route path="/admin/complaint/:id" element={<AdminRoute><ComplaintDetail /></AdminRoute>} />
                 <Route path="/admin/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
                 <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
+                <Route path="/admin/reviews" element={<SuperAdminRoute><SuperAdminReviews /></SuperAdminRoute>} />
                 <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
                 <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
               </Routes>
